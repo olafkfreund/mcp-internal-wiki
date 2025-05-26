@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.envrc
+flake.lock
+mcp.config.json
+*.log
+.cache/
+.yarn/
+*.tsbuildinfo
+.idea/
+.vscode/
+coverage/
+.DS_Store
+npm-debug.log*
+yarn-error.log*
+
+# OS-specific
+Thumbs.db
