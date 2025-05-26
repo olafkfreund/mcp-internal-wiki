@@ -1,30 +1,26 @@
-import express from 'express';
-import { WikiManager } from './wikiManager';
-import { registerRoutes } from './routes';
-import { loadWikiUrlsFromConfig } from './config';
+// MCP stdio JSON-RPC server entry point
+import { MCPServer } from './mcpServer';
 
-const app = express();
-const port = process.env.PORT || 3000;
+const server = new MCPServer();
 
-app.use(express.json());
+process.stdin.setEncoding('utf8');
+let buffer = '';
 
-const wikiManager = new WikiManager();
-
-// Load wiki URLs from config at startup
-(async () => {
-  const urls = loadWikiUrlsFromConfig();
-  for (const url of urls) {
-    try {
-      await wikiManager.addWikiUrl(url);
-      console.log(`Loaded wiki URL from config: ${url}`);
-    } catch (e) {
-      console.warn(`Failed to load wiki URL from config: ${url}`, e);
+process.stdin.on('data', (chunk) => {
+  buffer += chunk;
+  let boundary;
+  while ((boundary = buffer.indexOf('\n')) >= 0) {
+    const line = buffer.slice(0, boundary);
+    buffer = buffer.slice(boundary + 1);
+    if (line.trim()) {
+      try {
+        const req = JSON.parse(line);
+        server.handleRequest(req, (resp) => {
+          process.stdout.write(JSON.stringify(resp) + '\n');
+        });
+      } catch (e) {
+        // Optionally log parse errors
+      }
     }
   }
-})();
-
-registerRoutes(app, wikiManager);
-
-app.listen(port, () => {
-  console.log(`MCP Wiki Server running at http://localhost:${port}`);
 });

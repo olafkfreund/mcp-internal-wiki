@@ -1,101 +1,41 @@
-# MCP Internal Wiki Server
+# MCP Internal Wiki Server (MCP/Context7-style)
 
-This project is an MCP server for referencing and templating wiki content from multiple URLs. It is designed for easy installation (via npx), and is compatible with VS Code and Cursor.
+This project is now a Model Context Protocol (MCP) server using stdio and JSON-RPC, inspired by Context7's architecture. It is designed for LLMs, VS Code, Cursor, and other tools that support MCP.
 
-## Features
+## Usage
 
-- Register and index multiple wiki URLs
-- Fetch and store wiki content
-- Endpoints for template and command extraction
-- REST API for integration
-- Automated tests for easy verification
-
-## Quick Start
-
-### 1. Install dependencies
-
-```zsh
-npm install
-```
-
-### 2. Build the project
-
-```zsh
-npm run build
-```
-
-### 3. Run the server
-
-```zsh
-npm start
-```
-
-Or for development (with hot reload):
-
-```zsh
-npm run dev
-```
-
-### 4. Use with npx (after publishing)
-
-```zsh
-npx mcp-internal-wiki
-```
-
-### 5. Specify wiki URLs in `mcp.config.json`
-
-- Add a `mcp.config.json` file in your project root with:
-  ```json
-  {
-    "wikiUrls": [
-      "https://example.com/wiki1",
-      "https://example.com/wiki2"
-    ]
-  }
-  ```
-- The server will automatically load and index these URLs at startup.
-- You can still add more URLs at runtime via the REST API.
-
-## Nix Flake & DevShell
-
-### Build and Run with Nix Flake
-
-If you are on NixOS or have flakes enabled:
+### 1. Build
 
 ```sh
-# Enter the dev shell with all tools (Node.js, TypeScript, Jest, etc.)
-nix develop
-
-# Build the project
 npm run build
-
-# Run the server
-npm start
 ```
 
-### Flake Features
-- Provides a reproducible dev environment with all dependencies
-- Includes Node.js, TypeScript, Jest, and more
-- `nix develop` gives you a shell with all tools ready
-- Build and run the app using standard npm/yarn commands
+### 2. Run (stdio/JSON-RPC)
 
-## API Endpoints
-
-- `POST /wiki` — Add a wiki URL `{ url: string }`
-- `GET /wiki` — List registered URLs
-- `GET /wiki/content?url=...` — Get content for a URL
-- `GET /wiki/commands?url=...` — Extract commands from a URL
-- `GET /wiki/templates?url=...` — Extract templates from a URL
-
-## Testing
-
-```zsh
-npm test
+```sh
+node dist/server.js
 ```
 
-## Project Plan & Copilot Instructions
+You can test the server with the official MCP Inspector:
 
-See `PROJECT_PLAN.md` and `COPILOT_INSTRUCTIONS.md` for roadmap and contribution guidelines.
+```sh
+npx -y @modelcontextprotocol/inspector node dist/server.js
+```
+
+## Architecture
+
+- **Stdio/JSON-RPC**: Communicates over stdio, not HTTP.
+- **MCPServer**: Handles JSON-RPC requests and method dispatch.
+- **Sources**: Extensible source system (see `src/sources/wikiSource.ts`).
+
+## Extending
+
+- Add new sources in `src/sources/` and register them in `MCPServer`.
+- Implement new MCP methods in `MCPServer` as needed.
+
+## Project Plan
+
+See `PROJECT_PLAN.md` for roadmap and contribution guidelines.
 
 ## License
 
