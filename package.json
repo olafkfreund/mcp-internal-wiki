@@ -7,15 +7,29 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
+    "clean": "rm -rf dist",
+    "rebuild": "npm run clean && npm run build",
     "test": "jest",
     "test:client": "node test-client.js",
     "test:interactive": "node test-interactive.js",
     "test:simple": "node simple-test.js",
-    "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json"
+    "test:query": "node query-test.js",
+    "test:all": "npm run test:simple && npm run test:query",
+    "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json",
+    "setup:config": "[ -f \"./mcp.config.json\" ] || echo '{\"wikiUrls\":[\"https://freundcloud.gitbook.io/devops-examples-from-real-life/\",\"https://wiki.nixos.org/wiki/NixOS_Wiki\"]}' > mcp.config.json",
+    "prepublishOnly": "npm run build",
+    "postinstall": "npm run setup:config"
   },
   "bin": {
     "mcp-wiki-server": "bin/mcp-wiki-server.js"
   },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "INSTALLATION.md"
+  ],
   "keywords": [
     "mcp",
     "wiki",

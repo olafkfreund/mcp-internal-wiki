@@ -10,8 +10,12 @@
     self,
     nixpkgs,
     flake-utils,
-  }:
-    flake-utils.lib.eachDefaultSystem (
+  }: {
+    # NixOS module
+    nixosModules.default = import ./nixos-module.nix;
+    
+    # Normal package and apps per system
+  } // flake-utils.lib.eachDefaultSystem (
       system: let
         pkgs = import nixpkgs {inherit system;};
         nodejs = pkgs.nodejs_20;
@@ -47,6 +51,7 @@
           src = ./.;
 
           buildInputs = [nodejs];
+          nativeBuildInputs = [pkgs.makeWrapper];
 
           buildPhase = ''
             export HOME=$(mktemp -d)
@@ -55,12 +60,31 @@
           '';
 
           installPhase = ''
+            # Create installation directories
             mkdir -p $out/lib/node_modules/mcp-internal-wiki
-            cp -r dist bin package.json mcp.config.json $out/lib/node_modules/mcp-internal-wiki/
-
             mkdir -p $out/bin
-            ln -s $out/lib/node_modules/mcp-internal-wiki/bin/mcp-wiki-server.js $out/bin/mcp-wiki-server
-            chmod +x $out/bin/mcp-wiki-server
+            mkdir -p $out/share/doc/mcp-internal-wiki
+
+            # Copy main package files
+            cp -r dist bin package.json $out/lib/node_modules/mcp-internal-wiki/
+
+            # Create default config if none exists
+            if [ -f mcp.config.json ]; then
+              cp mcp.config.json $out/lib/node_modules/mcp-internal-wiki/
+            else
+              echo '{"wikiUrls":[]}' > $out/lib/node_modules/mcp-internal-wiki/mcp.config.json
+            fi
+
+            # Copy documentation
+            cp README.md INSTALLATION.md LICENSE $out/share/doc/mcp-internal-wiki/ || true
+
+            # Create executable with proper environment
+            makeWrapper ${nodejs}/bin/node $out/bin/mcp-wiki-server \
+              --add-flags "$out/lib/node_modules/mcp-internal-wiki/bin/mcp-wiki-server.js" \
+              --set NODE_PATH "$out/lib/node_modules"
+
+            # Ensure the script is executable
+            chmod +x $out/lib/node_modules/mcp-internal-wiki/bin/mcp-wiki-server.js
           '';
         };
 
@@ -96,6 +120,11 @@
             (pkgs.writeShellScriptBin "mcp-wiki-test-interactive" ''
               ${nodejs}/bin/node $(pwd)/test-interactive.js
             '')
+            
+            # Query test runner
+            (pkgs.writeShellScriptBin "mcp-wiki-test-query" ''
+              ${nodejs}/bin/node $(pwd)/query-test.js
+            '')
           ];
         };
 
@@ -117,6 +146,13 @@
           type = "app";
           program = toString (pkgs.writeShellScript "mcp-wiki-interactive-test" ''
             ${nodejs}/bin/node $(pwd)/test-interactive.js
+          '');
+        };
+        
+        apps.query = {
+          type = "app";
+          program = toString (pkgs.writeShellScript "mcp-wiki-query-test" ''
+            ${nodejs}/bin/node $(pwd)/query-test.js
           '');
         };
 

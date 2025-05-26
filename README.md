@@ -26,10 +26,30 @@ npm install
 npm run build
 ```
 
-#### Option B: Quick Install with npx (once published)
+#### Option B: Global Installation
+
+```sh
+# Install globally
+npm install -g mcp-internal-wiki
+
+# Run the server
+mcp-wiki-server
+```
+
+#### Option C: Quick Install with npx (no installation)
 
 ```sh
 npx mcp-internal-wiki
+```
+
+#### Option D: NixOS Installation
+
+```sh
+# Install via the flake
+nix profile install github:yourusername/mcp-internal-wiki
+
+# Or run without installing
+nix run github:yourusername/mcp-internal-wiki
 ```
 
 ### 2. Configure Wiki Sources
@@ -83,6 +103,8 @@ npx -y @modelcontextprotocol/inspector node dist/server.js
 ## Documentation
 
 - [Complete Installation Guide](INSTALLATION.md)
+- [Linux Installation Guide](LINUX_INSTALLATION.md)
+- [NixOS Installation Guide](NIXOS_INSTALLATION.md)
 - [VS Code Integration Guide](SETUP_VSCODE.md)
 - [VS Code Testing Guide](TESTING_VS_CODE.md)
 - [Nix Development Guide](NIX_DEVELOPMENT.md)

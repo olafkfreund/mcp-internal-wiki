@@ -1,0 +1,14 @@
+[Unit]
+Description=MCP Internal Wiki Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /usr/lib/node_modules/mcp-internal-wiki/bin/mcp-wiki-server.js
+Restart=on-failure
+User=nobody
+Group=nobody
+Environment=NODE_ENV=production
+WorkingDirectory=/etc/mcp-internal-wiki
+
+[Install]
+WantedBy=multi-user.target

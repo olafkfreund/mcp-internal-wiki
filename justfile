@@ -24,6 +24,10 @@ test-simple:
 test-interactive:
 	npm run test:interactive
 
+# Run query test
+test-query:
+	npm run test:query
+
 # Set up VS Code MCP integration
 setup-vscode:
 	npm run setup:vscode
@@ -35,6 +39,10 @@ package:
 # Install globally
 install-global:
 	npm install -g .
+
+# Create default configuration
+create-config:
+	echo '{"wikiUrls":["https://freundcloud.gitbook.io/devops-examples-from-real-life/","https://wiki.nixos.org/wiki/NixOS_Wiki"]}' > mcp.config.json
 
 # Stop the server (if running)
 stop:

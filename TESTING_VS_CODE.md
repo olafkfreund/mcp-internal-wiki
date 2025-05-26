@@ -5,14 +5,17 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 ## Setup
 
 1. Make sure you have built the project:
+
    ```
    npm run build
    ```
 
 2. Verify the VS Code settings:
+
    ```
    cat .vscode/settings.json
    ```
+
    It should contain the MCP server configuration.
 
 3. Make sure you have the MCP extension installed in VS Code:
@@ -24,6 +27,7 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 ## Test Procedure
 
 1. Open VS Code in this project directory
+
    ```
    code .
    ```
@@ -33,6 +37,7 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
    - Type "reload" and select "Developer: Reload Window"
 
 3. Open the test file
+
    ```
    code test-mcp.md
    ```
@@ -49,14 +54,17 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 If you prefer to test from the command line:
 
 1. Simple automated test:
+
    ```
    npm run test:simple
    ```
 
 2. Interactive test client:
+
    ```
    npm run test:interactive
    ```
+
    This allows you to send various commands to the MCP server:
    - `init` - Initialize
    - `sources` - List sources
@@ -71,13 +79,17 @@ If MCP integration is not working:
 1. Check VS Code output panel (Ctrl+Shift+U) and select "MCP"
 2. Verify that the server is running
 3. Re-run the setup:
+
    ```
    npm run setup:vscode
    ```
+
 4. Rebuild the project:
+
    ```
    npm run build
    ```
+
 5. Restart VS Code
 
 ## Common Issues

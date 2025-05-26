@@ -2,6 +2,10 @@
 
 This guide provides all the steps needed to set up, install, and test the MCP Wiki Server with VS Code.
 
+> **Note:** For detailed installation instructions for specific platforms, see:
+> - [Linux Installation Guide](LINUX_INSTALLATION.md)
+> - [NixOS Installation Guide](NIXOS_INSTALLATION.md)
+
 ## 1. Installation
 
 ### Option A: Standard Node.js

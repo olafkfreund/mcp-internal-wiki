@@ -42,6 +42,7 @@ just nix-build
 ```
 
 This will:
+
 1. Install dependencies
 2. Compile TypeScript
 3. Create an executable package
