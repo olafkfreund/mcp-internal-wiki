@@ -7,10 +7,14 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
-    "test": "jest"
+    "test": "jest",
+    "test:client": "node test-client.js",
+    "test:interactive": "node test-interactive.js",
+    "test:simple": "node simple-test.js",
+    "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json"
   },
   "bin": {
-    "mcp-wiki-server": "dist/server.js"
+    "mcp-wiki-server": "bin/mcp-wiki-server.js"
   },
   "keywords": [
     "mcp",
