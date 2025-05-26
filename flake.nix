@@ -10,12 +10,14 @@
     self,
     nixpkgs,
     flake-utils,
-  }: {
-    # NixOS module
-    nixosModules.default = import ./nixos-module.nix;
-    
-    # Normal package and apps per system
-  } // flake-utils.lib.eachDefaultSystem (
+  }:
+    {
+      # NixOS module
+      nixosModules.default = import ./nixos-module.nix;
+
+      # Normal package and apps per system
+    }
+    // flake-utils.lib.eachDefaultSystem (
       system: let
         pkgs = import nixpkgs {inherit system;};
         nodejs = pkgs.nodejs_20;
@@ -113,17 +115,17 @@
           paths = [
             # Simple test runner
             (pkgs.writeShellScriptBin "mcp-wiki-test" ''
-              ${nodejs}/bin/node $(pwd)/simple-test.js
+              ${nodejs}/bin/node $(pwd)/tests/simple-test.js
             '')
 
             # Interactive test runner
             (pkgs.writeShellScriptBin "mcp-wiki-test-interactive" ''
-              ${nodejs}/bin/node $(pwd)/test-interactive.js
+              ${nodejs}/bin/node $(pwd)/tests/test-interactive.js
             '')
-            
+
             # Query test runner
             (pkgs.writeShellScriptBin "mcp-wiki-test-query" ''
-              ${nodejs}/bin/node $(pwd)/query-test.js
+              ${nodejs}/bin/node $(pwd)/tests/query-test.js
             '')
           ];
         };
@@ -138,21 +140,21 @@
         apps.test = {
           type = "app";
           program = toString (pkgs.writeShellScript "mcp-wiki-test" ''
-            ${nodejs}/bin/node $(pwd)/simple-test.js
+            ${nodejs}/bin/node $(pwd)/tests/simple-test.js
           '');
         };
 
         apps.interactive = {
           type = "app";
           program = toString (pkgs.writeShellScript "mcp-wiki-interactive-test" ''
-            ${nodejs}/bin/node $(pwd)/test-interactive.js
+            ${nodejs}/bin/node $(pwd)/tests/test-interactive.js
           '');
         };
-        
+
         apps.query = {
           type = "app";
           program = toString (pkgs.writeShellScript "mcp-wiki-query-test" ''
-            ${nodejs}/bin/node $(pwd)/query-test.js
+            ${nodejs}/bin/node $(pwd)/tests/query-test.js
           '');
         };
 

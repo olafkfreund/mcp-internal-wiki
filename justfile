@@ -18,15 +18,15 @@ test:
 
 # Run simple MCP test
 test-simple:
-	npm run test:simple
+	node tests/simple-test.js
 
 # Run interactive MCP test
 test-interactive:
-	npm run test:interactive
+	node tests/test-interactive.js
 
 # Run query test
 test-query:
-	npm run test:query
+	node tests/query-test.js
 
 # Set up VS Code MCP integration
 setup-vscode:

@@ -39,7 +39,7 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 3. Open the test file
 
    ```
-   code test-mcp.md
+   code tests/test-mcp.md
    ```
 
 4. Try entering a query related to your wiki content
