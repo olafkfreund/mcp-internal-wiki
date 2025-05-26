@@ -77,12 +77,12 @@ export class MCPServer {
     });
   }
   
-  private handleGetContext(req: MCPRequest, send: (resp: MCPResponse) => void) {
+  private async handleGetContext(req: MCPRequest, send: (resp: MCPResponse) => void) {
     console.log(`Processing getContext request with params:`, JSON.stringify(req.params));
     
-    const results = this.sources.flatMap(src => {
+    const resultsPromises = this.sources.map(async (src) => {
       try {
-        const sourceResults = src.getContext(req.params) || [];
+        const sourceResults = await src.getContext(req.params) || [];
         console.log(`Source ${src.name} returned ${sourceResults.length} results`);
         return sourceResults;
       } catch (error) {
@@ -90,6 +90,8 @@ export class MCPServer {
         return [];
       }
     });
+    
+    const results = (await Promise.all(resultsPromises)).flat();
     
     // Format results properly for MCP protocol
     const formattedResults = results.map((result: any) => ({

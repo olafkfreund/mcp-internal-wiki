@@ -14,9 +14,11 @@
     "test:interactive": "node tests/test-interactive.js",
     "test:simple": "node tests/simple-test.js",
     "test:query": "node tests/query-test.js",
-    "test:all": "npm run test:simple && npm run test:query",
+    "test:content": "node tests/content-fetch-test.js",
+    "test:auth": "node tests/auth-test.js",
+    "test:all": "npm run test:simple && npm run test:query && npm run test:content",
     "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json",
-    "setup:config": "[ -f \"./mcp.config.json\" ] || echo '{\"wikiUrls\":[\"https://freundcloud.gitbook.io/devops-examples-from-real-life/\",\"https://wiki.nixos.org/wiki/NixOS_Wiki\"]}' > mcp.config.json",
+    "setup:config": "[ -f \"./mcp.config.json\" ] || echo '{\"wikiUrls\":[\"https://freundcloud.gitbook.io/devops-examples-from-real-life/\",\"https://wiki.nixos.org/wiki/NixOS_Wiki\"],\"cacheTimeoutMinutes\":30}' > mcp.config.json",
     "prepublishOnly": "npm run build",
     "postinstall": "npm run setup:config"
   },

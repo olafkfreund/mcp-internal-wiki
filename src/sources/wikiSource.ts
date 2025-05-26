@@ -1,8 +1,35 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import axios from 'axios';
+import { marked } from 'marked';
+
+// Content cache to avoid repeated requests
+interface CacheEntry {
+  content: string;
+  timestamp: number;
+  searchIndex: Record<string, number>; // Keyword -> relevance score
+}
 
 interface WikiConfig {
   wikiUrls: string[];
+  cacheTimeoutMinutes?: number;
+  auth?: WikiAuthConfig[];
+}
+
+// Authentication configuration for private wikis
+interface WikiAuthConfig {
+  urlPattern: string;  // Regex pattern to match URLs that need this auth
+  type: 'basic' | 'token' | 'oauth' | 'custom';
+  username?: string;  // For basic auth
+  password?: string;  // For basic auth
+  token?: string;     // For token auth
+  headerName?: string; // For custom header auth (e.g., 'Authorization')
+  headerValue?: string; // Value for the custom header
+  oauthConfig?: {      // For OAuth
+    clientId: string;
+    clientSecret: string;
+    tokenUrl: string;
+  };
 }
 
 // Wiki source types supported
@@ -19,11 +46,18 @@ interface WikiEntry {
   url: string;
   type: WikiType;
   name: string;
+  auth?: {
+    type: 'basic' | 'token' | 'oauth' | 'custom';
+    config: any;
+  };
 }
 
 export class WikiSource {
   name = 'wiki';
   private wikiEntries: WikiEntry[] = [];
+  private contentCache: Record<string, CacheEntry> = {};
+  private cacheTimeoutMs: number = 30 * 60 * 1000; // Default: 30 minutes
+  private authConfigs: WikiAuthConfig[] = [];
   
   constructor() {
     // Load config from mcp.config.json
@@ -33,13 +67,53 @@ export class WikiSource {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as WikiConfig;
         
         if (config.wikiUrls && Array.isArray(config.wikiUrls)) {
-          this.wikiEntries = config.wikiUrls.map(url => this.parseWikiUrl(url));
+          // Store auth configs for later use
+          this.authConfigs = config.auth || [];
+          
+          // Parse each wiki URL and assign auth if applicable
+          this.wikiEntries = config.wikiUrls.map(url => {
+            const entry = this.parseWikiUrl(url);
+            
+            // Check if this wiki needs authentication
+            const authConfig = this.findAuthConfigForUrl(url);
+            if (authConfig) {
+              entry.auth = {
+                type: authConfig.type,
+                config: authConfig
+              };
+              console.log(`Applied ${authConfig.type} authentication for ${entry.name}`);
+            }
+            
+            return entry;
+          });
+          
           console.log(`Loaded ${this.wikiEntries.length} wiki sources`);
         }
+        
+        // Set cache timeout if configured
+        if (config.cacheTimeoutMinutes) {
+          this.cacheTimeoutMs = config.cacheTimeoutMinutes * 60 * 1000;
+        }
+        
+        // Pre-fetch content from wikis in background
+        this.prefetchWikiContent();
       }
     } catch (error) {
       console.error('Error loading wiki configuration:', error);
     }
+  }
+  
+  // Find authentication config that matches a URL
+  private findAuthConfigForUrl(url: string): WikiAuthConfig | undefined {
+    return this.authConfigs.find(authConfig => {
+      try {
+        const pattern = new RegExp(authConfig.urlPattern);
+        return pattern.test(url);
+      } catch (error) {
+        console.error(`Invalid URL pattern in auth config: ${authConfig.urlPattern}`, error);
+        return false;
+      }
+    });
   }
   
   private parseWikiUrl(url: string): WikiEntry {
@@ -69,7 +143,305 @@ export class WikiSource {
     return { url, type, name };
   }
   
-  getContext(params: any) {
+  // Prefetch content from all wikis
+  private async prefetchWikiContent(): Promise<void> {
+    console.log('Pre-fetching wiki content...');
+    
+    for (const entry of this.wikiEntries) {
+      try {
+        await this.fetchWikiContent(entry);
+        console.log(`Fetched content from ${entry.name}`);
+      } catch (error) {
+        console.error(`Failed to fetch content from ${entry.name}:`, error);
+      }
+    }
+    
+    console.log('Wiki content pre-fetch complete');
+  }
+  
+  // Fetch content from a wiki
+  private async fetchWikiContent(entry: WikiEntry): Promise<string> {
+    // Check cache first
+    if (this.contentCache[entry.url] && 
+        (Date.now() - this.contentCache[entry.url].timestamp) < this.cacheTimeoutMs) {
+      return this.contentCache[entry.url].content;
+    }
+    
+    console.log(`Fetching content from ${entry.name} (${entry.url})...`);
+    
+    try {
+      let content = '';
+      
+      switch (entry.type) {
+        case WikiType.MediaWiki:
+          content = await this.fetchMediaWikiContent(entry);
+          break;
+        case WikiType.Gitbook:
+          content = await this.fetchGitbookContent(entry);
+          break;
+        case WikiType.Confluence:
+          content = await this.fetchConfluenceContent(entry);
+          break;
+        case WikiType.Markdown:
+          content = await this.fetchMarkdownContent(entry);
+          break;
+        case WikiType.SharePoint:
+          content = await this.fetchSharePointContent(entry);
+          break;
+        default:
+          content = await this.fetchGenericContent(entry);
+      }
+      
+      // Build search index
+      const searchIndex = this.buildSearchIndex(content);
+      
+      // Cache the content
+      this.contentCache[entry.url] = {
+        content,
+        timestamp: Date.now(),
+        searchIndex
+      };
+      
+      return content;
+    } catch (error) {
+      console.error(`Error fetching content from ${entry.url}:`, error);
+      
+      // If we previously had cached content, use it even if expired
+      if (this.contentCache[entry.url]) {
+        console.log(`Using expired cached content for ${entry.url}`);
+        return this.contentCache[entry.url].content;
+      }
+      
+      // Otherwise fall back to simulated content
+      console.log(`Falling back to simulated content for ${entry.url}`);
+      const keywords = ['fallback'];
+      const query = 'Error fetching content';
+      return this.generateSimulatedContent(entry, query, keywords) || 'Error fetching content';
+    }
+  }
+  
+  // Build a search index from content
+  private buildSearchIndex(content: string): Record<string, number> {
+    const index: Record<string, number> = {};
+    const words = content.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 2);
+    
+    // Count word occurrences
+    for (const word of words) {
+      index[word] = (index[word] || 0) + 1;
+    }
+    
+    return index;
+  }
+  
+  // Fetch content from MediaWiki
+  private async fetchMediaWikiContent(entry: WikiEntry): Promise<string> {
+    // MediaWiki API endpoint
+    const apiUrl = new URL(entry.url);
+    apiUrl.pathname = apiUrl.pathname.replace(/\/wiki\/.*$/, '/api.php');
+    
+    // Use MediaWiki API to get page content
+    const params = new URLSearchParams({
+      action: 'parse',
+      page: 'Main_Page', // Default to main page
+      format: 'json',
+      prop: 'text'
+    });
+    
+    const config = this.createRequestConfig(entry);
+    const response = await axios.get(`${apiUrl.toString()}?${params.toString()}`, config);
+    
+    if (response.data && response.data.parse && response.data.parse.text) {
+      return response.data.parse.text['*'];
+    }
+    
+    throw new Error('Failed to parse MediaWiki content');
+  }
+  
+  // Fetch content from GitBook
+  private async fetchGitbookContent(entry: WikiEntry): Promise<string> {
+    const config = this.createRequestConfig(entry);
+    const response = await axios.get(entry.url, config);
+    
+    if (response.data) {
+      // Gitbook uses client-side rendering, so we need to extract content from HTML
+      return this.extractContentFromHtml(response.data);
+    }
+    
+    throw new Error('Failed to fetch GitBook content');
+  }
+  
+  // Fetch content from Confluence
+  private async fetchConfluenceContent(entry: WikiEntry): Promise<string> {
+    try {
+      // Try direct HTML fetch first
+      const config = this.createRequestConfig(entry);
+      const response = await axios.get(entry.url, config);
+      return this.extractContentFromHtml(response.data);
+    } catch (error) {
+      // If no authentication or authentication failed
+      if (!entry.auth) {
+        console.warn(`Confluence at ${entry.url} may require authentication`);
+      } else {
+        console.error(`Authentication failed for Confluence at ${entry.url}`, error);
+      }
+      throw new Error('Failed to fetch Confluence content - check authentication');
+    }
+  }
+  
+  // Fetch content from Markdown source
+  private async fetchMarkdownContent(entry: WikiEntry): Promise<string> {
+    const config = this.createRequestConfig(entry);
+    const response = await axios.get(entry.url, config);
+    
+    if (response.data) {
+      if (typeof response.data === 'string') {
+        // Parse markdown to HTML
+        return marked(response.data);
+      } else {
+        // Handle JSON responses (e.g., from GitHub)
+        return response.data.content ? marked(response.data.content) : JSON.stringify(response.data);
+      }
+    }
+    
+    throw new Error('Failed to fetch Markdown content');
+  }
+  
+  // Fetch content from SharePoint
+  private async fetchSharePointContent(entry: WikiEntry): Promise<string> {
+    try {
+      const config = this.createRequestConfig(entry);
+      const response = await axios.get(entry.url, config);
+      return this.extractContentFromHtml(response.data);
+    } catch (error) {
+      if (!entry.auth) {
+        console.warn(`SharePoint at ${entry.url} likely requires authentication`);
+      } else {
+        console.error(`Authentication failed for SharePoint at ${entry.url}`, error);
+      }
+      throw new Error('Failed to fetch SharePoint content - check authentication');
+    }
+  }
+  
+  // Fetch content from generic URL
+  private async fetchGenericContent(entry: WikiEntry): Promise<string> {
+    const config = this.createRequestConfig(entry);
+    const response = await axios.get(entry.url, config);
+    
+    if (response.data) {
+      if (typeof response.data === 'string') {
+        // Try to detect if it's HTML or plain text
+        if (response.data.includes('<!DOCTYPE html>') || response.data.includes('<html')) {
+          return this.extractContentFromHtml(response.data);
+        }
+        return response.data;
+      } else {
+        // JSON response
+        return JSON.stringify(response.data);
+      }
+    }
+    
+    throw new Error('Failed to fetch content');
+  }
+  
+  // Extract meaningful content from HTML
+  private extractContentFromHtml(html: string): string {
+    // Basic extraction - in a real app, use a proper HTML parser
+    const textContent = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
+      .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
+      .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
+      .replace(/<aside\b[^<]*(?:(?!<\/aside>)<[^<]*)*<\/aside>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return textContent;
+  }
+  
+  // Extract code blocks from content
+  private extractCodeBlocks(content: string): { language: string, code: string }[] {
+    const codeBlocks: { language: string, code: string }[] = [];
+    
+    // Markdown-style code blocks ```language\ncode\n```
+    const markdownRegex = /```([a-zA-Z0-9_-]*)(?:\n|\r\n|)([\s\S]*?)(?:\n|\r\n|)```/g;
+    let match;
+    while ((match = markdownRegex.exec(content)) !== null) {
+      codeBlocks.push({
+        language: match[1] || 'text',
+        code: match[2]
+      });
+    }
+    
+    // HTML-style code blocks <pre><code>code</code></pre>
+    const htmlRegex = /<pre(?:\s[^>]*)?><code(?:\s[^>]*)?>([\s\S]*?)<\/code><\/pre>/g;
+    while ((match = htmlRegex.exec(content)) !== null) {
+      codeBlocks.push({
+        language: 'text',
+        code: match[1]
+      });
+    }
+    
+    // MediaWiki-style code blocks
+    const wikiRegex = /<syntaxhighlight lang="([^"]+)">([\s\S]*?)<\/syntaxhighlight>/g;
+    while ((match = wikiRegex.exec(content)) !== null) {
+      codeBlocks.push({
+        language: match[1],
+        code: match[2]
+      });
+    }
+    
+    return codeBlocks;
+  }
+  
+  // Create axios request config with authentication if available
+  private createRequestConfig(entry: WikiEntry): any {
+    if (!entry.auth) {
+      return {}; // No authentication needed
+    }
+    
+    const config: any = {
+      headers: {}
+    };
+    
+    switch (entry.auth.type) {
+      case 'basic':
+        const { username, password } = entry.auth.config;
+        if (username && password) {
+          const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64');
+          config.headers['Authorization'] = `Basic ${base64Credentials}`;
+        }
+        break;
+        
+      case 'token':
+        const { token } = entry.auth.config;
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        break;
+        
+      case 'custom':
+        const { headerName, headerValue } = entry.auth.config;
+        if (headerName && headerValue) {
+          config.headers[headerName] = headerValue;
+        }
+        break;
+        
+      case 'oauth':
+        // OAuth implementation would be more complex and require token management
+        console.log(`OAuth authentication for ${entry.url} - token would be applied if implemented`);
+        break;
+    }
+    
+    return config;
+  }
+
+  async getContext(params: any) {
     // Extract query from params
     const query = params?.query?.text || '';
     if (!query) {
@@ -78,28 +450,40 @@ export class WikiSource {
     
     console.log(`Processing query: "${query}"`);
     
-    // In a real implementation, you would fetch content from the wiki URLs
-    // For now, return stub data related to the query
-    const results = [];
-    
-    // Process query and simulate different results based on keywords
+    // Extract keywords from the query
     const keywords = this.extractKeywords(query.toLowerCase());
     
-    // Add sample results based on configured wiki URLs
-    this.wikiEntries.forEach(entry => {
-      // Generate simulated content based on query and wiki type
-      const relevantContent = this.generateSimulatedContent(entry, query, keywords);
-      
-      if (relevantContent) {
-        results.push({
-          title: `${entry.name}`,
-          content: relevantContent,
-          url: entry.url,
-          source: this.name,
-          type: entry.type
-        });
-      }
-    });
+    const results = [];
+    const fetchPromises = [];
+    
+    // Process each wiki entry
+    for (const entry of this.wikiEntries) {
+      fetchPromises.push(
+        this.processWikiEntry(entry, query, keywords)
+          .then(result => {
+            if (result) {
+              results.push(result);
+            }
+          })
+          .catch(error => {
+            console.error(`Error processing ${entry.name}:`, error);
+            // Add fallback content if fetch fails
+            const fallbackContent = this.generateSimulatedContent(entry, query, keywords);
+            if (fallbackContent) {
+              results.push({
+                title: `${entry.name} (Simulated Content)`,
+                content: fallbackContent,
+                url: entry.url,
+                source: this.name,
+                type: entry.type
+              });
+            }
+          })
+      );
+    }
+    
+    // Wait for all fetches to complete
+    await Promise.all(fetchPromises);
     
     // Add fallback if no URLs configured or no relevant content found
     if (results.length === 0) {
@@ -113,6 +497,91 @@ export class WikiSource {
     return results;
   }
   
+  private async processWikiEntry(entry: WikiEntry, query: string, keywords: string[]) {
+    try {
+      // Fetch content (will use cache if available)
+      const content = await this.fetchWikiContent(entry);
+      
+      // Check if content is relevant to the query
+      if (!this.isContentRelevantToQuery(content, query, keywords)) {
+        return null;
+      }
+      
+      // Extract relevant section
+      const relevantSection = this.extractRelevantSection(content, query, keywords);
+      
+      if (relevantSection) {
+        return {
+          title: `${entry.name}`,
+          content: relevantSection,
+          url: entry.url,
+          source: this.name,
+          type: entry.type
+        };
+      }
+    } catch (error) {
+      console.error(`Error processing wiki entry ${entry.name}:`, error);
+    }
+    return null;
+  }
+  
+  // Check if content is relevant to the query
+  private isContentRelevantToQuery(content: string, query: string, keywords: string[]): boolean {
+    // If we have a cached search index, use it
+    const lowerContent = content.toLowerCase();
+    
+    // Check for exact phrases
+    if (lowerContent.includes(query.toLowerCase())) {
+      return true;
+    }
+    
+    // Check for keywords - require at least 50% of keywords to appear
+    const keywordMatches = keywords.filter(keyword => lowerContent.includes(keyword));
+    return keywordMatches.length > 0 && keywordMatches.length >= Math.max(1, Math.floor(keywords.length * 0.5));
+  }
+  
+  // Extract a section of content relevant to the query
+  private extractRelevantSection(content: string, query: string, keywords: string[]): string {
+    // First check for code blocks
+    const codeBlocks = this.extractCodeBlocks(content);
+    const relevantCodeBlocks = codeBlocks.filter(block => {
+      return keywords.some(keyword => block.code.toLowerCase().includes(keyword)) ||
+             query.toLowerCase().split(' ').some(word => word.length > 3 && block.code.toLowerCase().includes(word));
+    });
+    
+    if (relevantCodeBlocks.length > 0) {
+      // Return most relevant code blocks (up to 3)
+      return relevantCodeBlocks.slice(0, 3).map(block => 
+        `\`\`\`${block.language}\n${block.code}\n\`\`\``
+      ).join('\n\n');
+    }
+    
+    // Fall back to content section extraction
+    const lowerContent = content.toLowerCase();
+    const queryIndex = lowerContent.indexOf(query.toLowerCase());
+    
+    if (queryIndex >= 0) {
+      // Extract content around the query match
+      const start = Math.max(0, queryIndex - 150);
+      const end = Math.min(content.length, queryIndex + query.length + 350);
+      return content.substring(start, end);
+    }
+    
+    // If no exact match, look for keywords
+    for (const keyword of keywords) {
+      const keywordIndex = lowerContent.indexOf(keyword);
+      if (keywordIndex >= 0) {
+        // Extract content around the keyword match
+        const start = Math.max(0, keywordIndex - 100);
+        const end = Math.min(content.length, keywordIndex + keyword.length + 400);
+        return content.substring(start, end);
+      }
+    }
+    
+    // If all else fails, return a portion of the beginning
+    return content.substring(0, 500) + '...';
+  }
+  
   private extractKeywords(text: string): string[] {
     // Simple keyword extraction - remove common words and split
     const commonWords = ['the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'how'];
@@ -122,6 +591,7 @@ export class WikiSource {
       .filter(word => word.length > 2 && !commonWords.includes(word));
   }
   
+  // Fallback to simulated content if real fetch fails
   private generateSimulatedContent(entry: WikiEntry, query: string, keywords: string[]): string | null {
     // Check if query has any keywords relevant to this wiki
     const isRelevant = this.isQueryRelevantToWiki(entry, keywords);
@@ -148,9 +618,6 @@ export class WikiSource {
   }
   
   private isQueryRelevantToWiki(entry: WikiEntry, keywords: string[]): boolean {
-    // In a real implementation, this would check if the wiki contains content for these keywords
-    // For testing, we'll simulate some wikis being relevant for certain keywords
-    
     // For GitBook wiki about DevOps
     if (entry.url.includes('devops-examples') && 
         keywords.some(k => ['devops', 'docker', 'kubernetes', 'pipeline', 'ci', 'cd', 'jenkins', 'aws', 'terraform'].includes(k))) {

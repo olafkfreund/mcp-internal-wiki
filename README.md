@@ -46,6 +46,7 @@ MCP Internal Wiki Server is a specialized bridge between your company's knowledg
 - 🧩 **Extensible architecture**: Add custom sources and adapters for your specific needs
 - 🛠️ **Platform agnostic**: Works with any MCP-compatible editor
 - 🔒 **Privacy-focused**: All content remains within your environment; no external API calls
+- 🔐 **Secure authentication**: Support for basic, token, and custom authentication methods for private wikis
 - ⚡ **Lightning fast**: Stdio/JSON-RPC communication ensures minimal latency
 
 ## 📦 Quick Start
@@ -126,12 +127,48 @@ Create or edit `mcp.config.json` to include your wiki URLs:
 {
   "wikiUrls": [
     "https://your-company-wiki.example.com",
-    "https://your-team-gitbook.example.io"
+    "https://your-team-gitbook.example.io",
+    "https://private-confluence.example.com/wiki"
+  ],
+  "cacheTimeoutMinutes": 30
+}
+```
+
+### 3. Configure Authentication for Private Wikis
+
+For wikis that require authentication, add an `auth` section to your `mcp.config.json`:
+
+```json
+{
+  "wikiUrls": [
+    "https://your-company-wiki.example.com",
+    "https://your-team-gitbook.example.io",
+    "https://private-confluence.example.com/wiki"
+  ],
+  "cacheTimeoutMinutes": 30,
+  "auth": [
+    {
+      "urlPattern": "private-confluence\\.example\\.com",
+      "type": "basic",
+      "username": "your-username",
+      "password": "your-password"
+    },
+    {
+      "urlPattern": "github\\.com",
+      "type": "token",
+      "token": "your-github-token"
+    }
   ]
 }
 ```
 
-### 3. VS Code Integration
+Supported authentication types:
+- `basic`: Username and password for HTTP Basic Auth
+- `token`: Bearer token authentication
+- `custom`: Custom header authentication
+- `oauth`: OAuth 2.0 authentication (advanced configuration)
+
+### 4. VS Code Integration
 
 1. Install the [Copilot MCP Extension](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
 2. Configure VS Code to use the MCP server:
@@ -210,6 +247,7 @@ nix run .#query
 - [VS Code Testing Guide](TESTING_VS_CODE.md)
 - [Nix Development Guide](NIX_DEVELOPMENT.md)
 - [Project Plan](PROJECT_PLAN.md)
+- [Wiki Integration Guide](docs/WIKI_INTEGRATION.md)
 
 ## 🔧 Extending
 

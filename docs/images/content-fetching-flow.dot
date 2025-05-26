@@ -1,0 +1,43 @@
+digraph G {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="Arial", fontsize=12];
+    edge [fontname="Arial", fontsize=10];
+    
+    /* Nodes */
+    VS_Code [label="VS Code\nwith MCP Extension", shape=component];
+    MCP_Server [label="MCP Wiki\nServer", shape=component];
+    Cache [label="Content\nCache", shape=cylinder];
+    
+    subgraph cluster_wikis {
+        label = "External Wiki Sources";
+        color = lightgrey;
+        
+        Wiki1 [label="GitBook Wiki"];
+        Wiki2 [label="MediaWiki"];
+        Wiki3 [label="Markdown Docs"];
+        Wiki4 [label="Confluence"];
+    }
+    
+    /* Edges */
+    VS_Code -> MCP_Server [label="1. Query"];
+    MCP_Server -> Cache [label="2. Check Cache"];
+    Cache -> MCP_Server [label="3a. Cache Hit"];
+    
+    MCP_Server -> Wiki1 [label="3b. Fetch (if cache miss)"];
+    MCP_Server -> Wiki2 [label="3b. Fetch (if cache miss)"];
+    MCP_Server -> Wiki3 [label="3b. Fetch (if cache miss)"];
+    MCP_Server -> Wiki4 [label="3b. Fetch (if cache miss)"];
+    
+    Wiki1 -> MCP_Server [label="4. Response"];
+    Wiki2 -> MCP_Server [label="4. Response"];
+    Wiki3 -> MCP_Server [label="4. Response"];
+    Wiki4 -> MCP_Server [label="4. Response"];
+    
+    MCP_Server -> Cache [label="5. Update Cache"];
+    MCP_Server -> VS_Code [label="6. Return\nRelevant Content"];
+    
+    /* Invisible edges for layout */
+    Wiki1 -> Wiki2 [style=invis];
+    Wiki2 -> Wiki3 [style=invis];
+    Wiki3 -> Wiki4 [style=invis];
+}
