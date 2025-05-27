@@ -1,0 +1,28 @@
+{
+  "name": "mcp-private-wiki-poc",
+  "version": "1.0.0",
+  "description": "Proof of Concept for MCP Server with Private Wiki Authentication",
+  "scripts": {
+    "start": "docker-compose up",
+    "build": "docker-compose build",
+    "start:detach": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "check": "./check-services.sh",
+    "test": "./check-services.sh && node test-auth-poc.js",
+    "test:all": "./run-all-tests.sh",
+    "test:verbose": "NODE_DEBUG=axios ./check-services.sh && node test-auth-poc.js",
+    "test:integration": "./check-services.sh && node auth-integration-test.js",
+    "interactive": "./check-services.sh && node interactive-test-client.js",
+    "sample": "./check-services.sh && node developer-sample.js",
+    "quicktest": "node -e \"const axios=require('axios');axios.post('http://localhost:3000',{jsonrpc:'2.0',id:'quick',method:'getContext',params:{query:{text:'aws server'}}}).then(r=>console.log('Result:',JSON.stringify(r.data,null,2))).catch(e=>console.error('Error:',e.message))\"",
+    "restart": "./restart.sh",
+    "logs:mcp": "docker-compose logs mcp-server",
+    "logs:markdown": "docker-compose logs markdown-server",
+    "monitor": "node monitor-containers.js",
+    "menu": "./test-menu.sh",
+    "status": "docker-compose ps"
+  },
+  "dependencies": {
+    "axios": "^1.6.7"
+  }
+}

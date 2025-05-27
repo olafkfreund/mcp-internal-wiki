@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  # Markdown Server with Authentication
+  markdown-server:
+    build: 
+      context: ./markdown-server
+    ports:
+      - "3001:3001"
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-u", "admin:secret", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    container_name: markdown-server
+
+  # MCP Server
+  mcp-server:
+    build:
+      context: ./mcp-server
+    ports:
+      - "3000:3000"
+    networks:
+      - mcp-network
+    depends_on:
+      markdown-server:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DEBUG=* # Enable debug logging
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    container_name: mcp-server
+
+  # Optional: VSCode Server for testing (uncomment to enable)
+  # code-server:
+  #   image: codercom/code-server:latest
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - PASSWORD=secret
+  #   volumes:
+  #     - ./:/home/coder/project
+  #   networks:
+  #     - mcp-network
+  #   depends_on:
+  #     - mcp-server
+  #     - markdown-server
+  #   container_name: code-server
+
+networks:
+  mcp-network:
+    driver: bridge

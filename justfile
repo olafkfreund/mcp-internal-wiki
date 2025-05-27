@@ -28,6 +28,44 @@ test-interactive:
 test-query:
 	node tests/query-test.js
 
+# Run content fetching test
+test-content:
+	node tests/content-fetch-test.js
+
+# Run auth test
+test-auth:
+	node tests/auth-test.js
+
+# Run all tests from tests folder
+test-all:
+	npm run test:all
+
+# Tests from POC Private Wiki folder
+
+# Run auth POC test
+test-auth-poc:
+	cd poc-private-wiki && node test-auth-poc.js
+
+# Run auth integration test
+test-auth-integration:
+	cd poc-private-wiki && node auth-integration-test.js
+
+# Run POC interactive test client
+test-poc-interactive:
+	cd poc-private-wiki && node interactive-test-client.js
+
+# Run POC container monitor
+test-poc-monitor:
+	cd poc-private-wiki && node monitor-containers.js
+
+# Run POC test menu
+test-poc-menu:
+	cd poc-private-wiki && ./test-menu.sh
+
+# Run all POC tests
+test-poc-all:
+	cd poc-private-wiki && ./run-all-tests.sh
+
 # Set up VS Code MCP integration
 setup-vscode:
 	npm run setup:vscode
