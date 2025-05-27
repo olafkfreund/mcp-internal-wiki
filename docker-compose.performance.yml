@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  mcp-wiki-performance:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.performance
+    container_name: mcp-wiki-perf
+    restart: unless-stopped
+    
+    # Performance optimizations
+    mem_limit: 8g
+    mem_reservation: 4g
+    cpus: '4.0'
+    
+    # Memory settings
+    shm_size: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    
+    environment:
+      - NODE_ENV=production
+      - CACHE_SIZE_MB=500
+      - BATCH_SIZE=20
+      - MAX_CONNECTIONS=50
+      - INDEX_REBUILD_INTERVAL=86400000
+      - MONITORING_INTERVAL=60000
+      - SLOW_QUERY_THRESHOLD=5000
+      - PERFORMANCE_MONITORING=true
+    
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Debug port for profiling
+    
+    volumes:
+      - ./data/cache:/app/data/cache:rw
+      - ./data/index:/app/data/index:rw
+      - ./logs:/app/logs:rw
+      - ./config:/app/config:ro
+    
+    networks:
+      - wiki-performance
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis for distributed caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-wiki-redis
+    restart: unless-stopped
+    
+    # Redis performance tuning
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+    
+    mem_limit: 2g
+    
+    ports:
+      - "6379:6379"
+    
+    volumes:
+      - redis_data:/data
+    
+    networks:
+      - wiki-performance
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mcp-wiki-prometheus
+    restart: unless-stopped
+    
+    ports:
+      - "9090:9090"
+    
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    
+    networks:
+      - wiki-performance
+
+  # Grafana for performance dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mcp-wiki-grafana
+    restart: unless-stopped
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    ports:
+      - "3001:3000"
+    
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+    
+    networks:
+      - wiki-performance
+    
+    depends_on:
+      - prometheus
+
+  # Load testing service
+  load-tester:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.loadtest
+    container_name: mcp-wiki-loadtest
+    
+    environment:
+      - TARGET_URL=http://mcp-wiki-performance:3000
+      - DURATION=300
+      - CONCURRENCY=50
+      - RAMP_UP=30
+    
+    networks:
+      - wiki-performance
+    
+    depends_on:
+      - mcp-wiki-performance
+    
+    profiles:
+      - loadtest
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  wiki-performance:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

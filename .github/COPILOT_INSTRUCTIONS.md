@@ -14,7 +14,13 @@ mcp-internal-wiki/
 │   ├── config.ts        # Configuration management
 │   ├── mcpServer.ts     # Core MCP protocol implementation
 │   ├── wikiManager.ts   # Wiki content management
-│   └── sources/         # Content source implementations
+│   ├── sources/         # Content source implementations
+│   └── performance/     # Performance optimization components
+│       ├── CacheManager.ts       # Multi-level caching system
+│       ├── IndexManager.ts       # Full-text search indexing
+│       ├── BatchProcessor.ts     # Priority-based job processing
+│       ├── ConnectionPool.ts     # HTTP connection management
+│       └── OptimizedWikiSource.ts # Integrated performance layer
 ├── tests/               # Test scripts for manual testing
 ├── test/                # Jest automated tests
 ├── bin/                 # Executable scripts
@@ -24,6 +30,18 @@ mcp-internal-wiki/
 ```
 
 ## 🛠️ Development Guidelines
+
+### ⚠️ CRITICAL: Multi-Environment Development Requirements
+
+**EVERY new feature and change MUST be integrated into ALL development environments:**
+
+1. **Nix Environment (`flake.nix`)**: Update dependencies, apps, and development shell
+2. **Justfile Commands (`justfile`)**: Add corresponding build/test/deploy commands
+3. **Docker POC Environment (`poc-private-wiki/`)**: Test with authentication scenarios
+4. **Package.json Scripts**: Ensure npm script compatibility
+5. **Performance Integration**: Leverage performance optimization components
+
+**Failure to update all environments will result in inconsistent behavior and broken deployments.**
 
 ### Code Organization
 
@@ -76,9 +94,31 @@ mcp-internal-wiki/
 
 ### Performance Optimization
 
-- Implement caching using an in-memory store or Redis for scalability
-- Add cache invalidation strategy based on TTL or explicit refresh
-- For periodic refresh, use `node-cron` or similar scheduling libraries
+**ENTERPRISE-READY PERFORMANCE SYSTEM IMPLEMENTED** *(May 28, 2025)*
+
+The project now includes a comprehensive performance optimization system:
+
+- **Multi-Level Caching**: Intelligent cache management with content (60%), metadata (30%), and query (10%) allocation
+- **Full-Text Search Indexing**: Real-time search with fuzzy matching and background rebuilding
+- **Priority-Based Batch Processing**: Configurable job queue with automatic retries
+- **HTTP Connection Pool**: Efficient connection management with health monitoring
+- **Performance Monitoring**: Real-time metrics collection and load testing capabilities
+
+**When developing new features:**
+- Integrate with `CacheManager` for data caching needs
+- Use `IndexManager` for searchable content
+- Leverage `BatchProcessor` for background tasks
+- Utilize `ConnectionPool` for HTTP requests
+- Add performance testing for new components
+- Update performance configuration documentation
+
+**Performance Testing Commands:**
+```bash
+npm run test:cache           # Quick JavaScript cache tests
+npm run test:performance     # Full TypeScript performance suite
+npm run test:load           # Load testing with concurrent users
+npm run test:setup          # Complete setup and validation
+```
 
 ### Web UI Development
 
@@ -99,6 +139,39 @@ mcp-internal-wiki/
 - Use the Docker setup in `poc-private-wiki/` as a reference
 - Maintain compatibility with Docker Compose for multi-container setups
 - Test Docker builds and runtime behavior for all new features
+- **CRITICAL**: All new features must be tested in the Docker POC environment
+- Ensure new features work with authentication in containerized deployment
+- Update Docker configurations (`Dockerfile`, `docker-compose.yml`) when adding dependencies
+- Test both local development and Docker environments for feature parity
+
+## 🔧 Development Environment Requirements
+
+**ALL new features and changes MUST be integrated into ALL development environments:**
+
+### 1. Nix Development Environment (`flake.nix`)
+- Add new dependencies to `buildInputs` or `nativeBuildInputs`
+- Update development shell with new tools or commands
+- Add new test commands to the Nix app definitions
+- Ensure all features work in the Nix development shell
+
+### 2. Justfile Commands (`justfile`)
+- Add new build, test, or deployment commands
+- Update existing commands if functionality changes
+- Ensure all commands work in both Nix and non-Nix environments
+- Document new commands in the help system
+
+### 3. Docker POC Environment (`poc-private-wiki/`)
+- Test new features with authentication scenarios
+- Update Docker configurations if new services are needed
+- Ensure feature compatibility with containerized deployment
+- Add appropriate test commands for new functionality
+
+### 4. Package.json Scripts
+- Add npm scripts for new testing or build features
+- Ensure compatibility with global installation
+- Update dependencies when adding new functionality
+
+**Failure to update all environments will result in inconsistent behavior across development setups.**
 
 ## 📋 Project Maintenance
 

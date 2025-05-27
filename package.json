@@ -19,6 +19,12 @@
     "test:ai": "node tests/ai-relevance-test.js",
     "test:ai:mock": "node tests/test-ai-mocked.js",
     "test:all": "npm run test:simple && npm run test:query && npm run test:content",
+    "test:performance": "tsx src/test-performance.ts",
+    "test:load": "tsx src/test-performance.ts --load-test",
+    "test:cache": "node tests/test-cache-performance.js",
+    "test:quick": "node tests/quick-test.js",
+    "test:setup": "node setup-and-test.js",
+    "perf": "tsx src/performance/cli/performance-cli.ts",
     "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json",
     "setup:config": "[ -f \"./mcp.config.json\" ] || echo '{\"wikiUrls\":[\"https://freundcloud.gitbook.io/devops-examples-from-real-life/\",\"https://wiki.nixos.org/wiki/NixOS_Wiki\"],\"cacheTimeoutMinutes\":30}' > mcp.config.json",
     "prepublishOnly": "npm run build",
@@ -59,6 +65,7 @@
     "supertest": "^7.1.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.4.5"
   }
 }

@@ -1,0 +1,52 @@
+{
+  "performance": {
+    "cache": {
+      "maxSize": 500,
+      "ttl": 7200000,
+      "maxItems": 50000,
+      "enablePersistence": true,
+      "persistencePath": "./data/cache"
+    },
+    "batch": {
+      "batchSize": 20,
+      "concurrency": 10,
+      "delayBetweenBatches": 50,
+      "maxRetries": 5,
+      "priorityLevels": 5
+    },
+    "pool": {
+      "maxConnections": 50,
+      "acquireTimeout": 30000,
+      "idleTimeout": 300000,
+      "maxRetries": 3,
+      "retryDelay": 1000
+    },
+    "indexing": {
+      "enabled": true,
+      "rebuildInterval": 86400000,
+      "backgroundSync": true
+    },
+    "monitoring": {
+      "enabled": true,
+      "metricsInterval": 60000,
+      "slowQueryThreshold": 5000
+    }
+  },
+  "wikiSources": [
+    {
+      "name": "Enterprise Wiki",
+      "url": "https://wiki.company.com",
+      "type": "confluence"
+    },
+    {
+      "name": "Technical Documentation",
+      "url": "https://docs.company.com",
+      "type": "markdown"
+    },
+    {
+      "name": "API Documentation",
+      "url": "https://api-docs.company.com",
+      "type": "openapi"
+    }
+  ]
+}

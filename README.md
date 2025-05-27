@@ -49,7 +49,9 @@ MCP Internal Wiki Server is a specialized bridge between your company's knowledg
 - 🛠️ **Platform agnostic**: Works with any MCP-compatible editor
 - 🔒 **Privacy-focused**: All content remains within your environment; no external API calls
 - 🔐 **Secure authentication**: Support for basic, token, and custom authentication methods for private wikis
-- ⚡ **Lightning fast**: Stdio/JSON-RPC communication ensures minimal latency
+- ⚡ **Lightning fast**: Advanced performance optimization with multi-level caching, connection pooling, and batch processing
+- 🚀 **Enterprise scale**: Handles millions of wiki pages with intelligent resource management and real-time monitoring
+- 📊 **Performance monitoring**: Real-time metrics collection with cache hit rates, response times, and throughput tracking
 
 ## 📦 Quick Start
 
@@ -210,6 +212,102 @@ Supported authentication types:
 - **Knowledge Management**: Create a unified interface to distributed knowledge bases
 - **DevOps Practices**: Quick reference to infrastructure patterns and operational procedures
 
+## ⚡ Performance & Scalability
+
+### Enterprise-Grade Performance Optimization
+
+MCP Wiki Server includes advanced performance optimization features for handling large-scale deployments:
+
+- **🚀 Multi-Level Caching**: Intelligent cache management with automatic allocation:
+  - Content cache (60% of memory) for large wiki pages
+  - Metadata cache (30% of memory) for page information
+  - Query cache (10% of memory) for search results
+  - LRU eviction with configurable size and item limits
+
+- **🔍 Full-Text Search Indexing**: Real-time search capabilities:
+  - Background index rebuilding with minimal performance impact
+  - Fuzzy search matching for typos and partial queries
+  - Memory-optimized inverted index structure
+  - Configurable indexing intervals
+
+- **⚡ Priority-Based Batch Processing**: Background job management:
+  - Configurable concurrency limits for optimal resource usage
+  - Automatic retry mechanisms with exponential backoff
+  - Priority queues for critical vs. background tasks
+  - Job deduplication to prevent redundant processing
+
+- **🔄 HTTP Connection Pool**: Efficient network resource management:
+  - Connection reuse to reduce overhead
+  - Automatic failover and health monitoring
+  - Configurable pool sizes and timeouts
+  - Resource cleanup and garbage collection
+
+- **📊 Real-Time Performance Monitoring**: Comprehensive metrics collection:
+  - Cache hit rates and memory usage tracking
+  - Response time monitoring with slow query detection
+  - Request throughput and error rate tracking
+  - Performance dashboards and alerting
+
+### Performance Testing
+
+Run comprehensive performance tests to validate your deployment:
+
+```bash
+# Test cache performance (immediate - no build required)
+npm run test:cache
+
+# Full performance test suite (requires build)
+npm run build && npm run test:performance
+
+# Load testing with concurrent users
+npm run test:load
+
+# Performance CLI tools
+npm run perf benchmark
+npm run perf monitor
+```
+
+### Configuration for Large Deployments
+
+Configure performance settings in your `mcp.config.json`:
+
+```json
+{
+  "performance": {
+    "cache": {
+      "maxSize": 500,           // 500MB cache size
+      "ttl": 3600000,          // 1 hour TTL
+      "maxItems": 50000,       // 50k items max
+      "enablePersistence": true
+    },
+    "indexing": {
+      "enabled": true,
+      "rebuildInterval": 300000, // 5 minutes
+      "backgroundSync": true
+    },
+    "batch": {
+      "batchSize": 20,
+      "concurrency": 10,
+      "maxRetries": 3
+    },
+    "pool": {
+      "maxConnections": 50,
+      "acquireTimeout": 10000,
+      "idleTimeout": 60000
+    }
+  }
+}
+```
+
+### Scaling Guidelines
+
+| Scale | Pages | Users | Cache Size | Expected Performance |
+|-------|-------|-------|------------|---------------------|
+| Small | < 10K | < 10 | 100MB | > 50 RPS |
+| Medium | < 100K | < 50 | 500MB | > 100 RPS |
+| Large | < 1M | < 200 | 2GB | > 200 RPS |
+| Enterprise | > 1M | > 500 | 8GB | > 500 RPS |
+
 ## 🧪 Testing
 
 ### Standard Testing Commands
@@ -313,6 +411,8 @@ just test-poc-menu             # Interactive test menu
 - [NixOS Installation Guide](NIXOS_INSTALLATION.md)
 - [VS Code Integration Guide](SETUP_VSCODE.md)
 - [VS Code Testing Guide](TESTING_VS_CODE.md)
+- [Performance Testing Guide](docs/PERFORMANCE.md)
+- [Performance Optimization Documentation](docs/TESTING-PERFORMANCE.md)
 - [Nix Development Guide](NIX_DEVELOPMENT.md)
 - [Project Plan](PROJECT_PLAN.md)
 - [Wiki Integration Guide](docs/WIKI_INTEGRATION.md)

@@ -1,0 +1,62 @@
+# Performance-optimized Dockerfile for large wiki datasets
+FROM node:18-alpine AS base
+
+# Install performance monitoring tools
+RUN apk add --no-cache \
+    htop \
+    iotop \
+    curl \
+    jq
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install dependencies with performance optimizations
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096 --optimize-for-size"
+RUN npm ci --only=production && npm cache clean --force
+
+# Production stage
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+# Copy node_modules from base
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package*.json ./
+
+# Copy source code
+COPY src/ ./src/
+COPY config/ ./config/
+
+# Create performance data directories
+RUN mkdir -p /app/data/cache \
+    && mkdir -p /app/data/index \
+    && mkdir -p /app/logs \
+    && chown -R node:node /app
+
+# Performance optimizations
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=8192 --gc-global --expose-gc"
+ENV UV_THREADPOOL_SIZE=128
+ENV PERFORMANCE_MONITORING=true
+ENV CACHE_ENABLED=true
+ENV INDEXING_ENABLED=true
+
+# Health check for performance monitoring
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+USER node
+
+EXPOSE 3000
+
+# Use PM2 for production process management
+RUN npm install -g pm2
+
+COPY ecosystem.config.js ./
+
+CMD ["pm2-runtime", "start", "ecosystem.config.js"]
