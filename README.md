@@ -45,6 +45,10 @@ MCP Internal Wiki Server is a specialized bridge between your company's knowledg
 
 - 📚 **Multi-source integration**: Connect to multiple wiki platforms simultaneously
 - 🔍 **Contextual search**: Find exactly what you need with advanced query capabilities
+- 🚀 **Code transformation**: Convert wiki content to executable code in multiple languages
+- 🏗️ **Project generation**: Generate complete project structures from documentation
+- 🎨 **Template system**: Use Handlebars templates for consistent code generation
+- 🤖 **AI-powered**: Leverage AI providers for intelligent code generation and transformation
 - 🧩 **Extensible architecture**: Add custom sources and adapters for your specific needs
 - 🛠️ **Platform agnostic**: Works with any MCP-compatible editor
 - 🔒 **Privacy-focused**: All content remains within your environment; no external API calls
@@ -251,6 +255,163 @@ For npx usage:
 **⚡ Quick Reference**: For a concise setup guide, see [VS Code Quick Reference](VSCODE_QUICK_REFERENCE.md).
 
 3. **Restart VS Code**: Restart VS Code or reload the window to apply the configuration
+
+## 🚀 Content Transformation & Code Generation
+
+MCP Internal Wiki Server includes powerful transformation capabilities that can convert your wiki documentation into executable code and complete project structures.
+
+### Available MCP Tools
+
+The server provides these transformation tools through the standard MCP protocol:
+
+#### 🔄 `transform_content`
+Transform wiki content or markdown into executable code in any programming language.
+
+**Usage in VS Code:**
+- Select wiki content in your editor
+- Access via MCP tools interface 
+- Choose target language and framework
+
+**Parameters:**
+- `content`: Wiki content or markdown to transform
+- `targetLanguage`: Target programming language (typescript, python, javascript, etc.)
+- `framework`: Optional framework (express, fastapi, react, etc.)
+- `projectType`: Optional project type (api, library, cli, etc.)
+
+#### 🏗️ `generate_code`
+Generate code from wiki content using templates and AI-powered generation.
+
+**Parameters:**
+- `content`: Wiki documentation to generate code from
+- `codeType`: Type of code to generate (dockerfile, typescript, python, yaml, etc.)
+- `templateName`: Optional template to use (express-server, typescript-class, etc.)
+
+**Features:**
+- **Template-based generation**: Uses Handlebars templates for consistent output
+- **AI-enhanced**: Leverages configured AI providers for intelligent code generation
+- **Multi-format support**: Generates Dockerfiles, package.json, TypeScript classes, and more
+
+#### 📁 `generate_project`
+Generate complete project structures from wiki documentation.
+
+**Parameters:**
+- `content`: Wiki content describing project requirements
+- `projectType`: Type of project (express-api, react-app, cli-tool, etc.)
+- `language`: Programming language (typescript, python, javascript, etc.)
+
+**Capabilities:**
+- **Full project scaffolding**: Creates complete directory structures
+- **Multi-file generation**: Generates all necessary project files
+- **Best practices**: Follows established patterns and conventions
+
+### Template System
+
+The transformation system uses Handlebars templates for consistent code generation:
+
+**Available Templates:**
+- `typescript-class.hbs` - TypeScript class definitions
+- `express-server.hbs` - Express.js server setup
+- `dockerfile.hbs` - Docker containerization
+- `package-json.hbs` - Node.js package configuration
+- `readme.hbs` - Project documentation
+
+**Custom Templates:**
+Add your own templates in the `/templates` directory using Handlebars syntax.
+
+### AI Integration
+
+The transformation system integrates with multiple AI providers:
+
+- **OpenAI GPT-4o**: Advanced code generation and analysis
+- **Google Gemini 2.5 Pro**: Intelligent content transformation
+- **Azure OpenAI**: Enterprise-grade AI capabilities
+- **Claude**: Anthropic's AI for precise code generation
+
+**Configuration in `mcp.config.json`:**
+```json
+{
+  "ai": {
+    "enabled": true,
+    "providers": {
+      "openai": {
+        "apiKey": "your-openai-api-key",
+        "model": "gpt-4o"
+      },
+      "gemini": {
+        "apiKey": "your-gemini-api-key", 
+        "model": "gemini-2.5-pro"
+      }
+    },
+    "primaryProvider": "openai"
+  }
+}
+```
+
+### Example Transformation Workflows
+
+#### 1. API Documentation → Express Server
+```markdown
+# User Authentication API
+Create a REST API with JWT authentication
+- POST /auth/login
+- POST /auth/register  
+- GET /auth/profile
+```
+↓ **transform_content** with `targetLanguage: "typescript"` and `framework: "express"`
+```typescript
+// Generated Express.js server with JWT authentication
+import express from 'express';
+import jwt from 'jsonwebtoken';
+// ... complete implementation
+```
+
+#### 2. Deployment Guide → Docker Configuration
+```markdown
+# Deployment Requirements
+- Node.js 18 runtime
+- PostgreSQL database
+- Redis for caching
+- Environment variables for config
+```
+↓ **generate_code** with `codeType: "dockerfile"`
+```dockerfile
+FROM node:18-alpine
+RUN apk add --no-cache postgresql-client redis
+# ... complete Docker configuration
+```
+
+#### 3. Project Specification → Full Scaffolding
+```markdown
+# CLI Tool Requirements
+TypeScript-based command-line tool for file processing
+- File input/output operations
+- Configuration via CLI arguments
+- Unit testing with Jest
+```
+↓ **generate_project** with `projectType: "cli-tool"` and `language: "typescript"`
+```
+project/
+├── src/
+│   ├── cli.ts
+│   ├── processor.ts
+│   └── config.ts
+├── tests/
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+### Testing Transformation Features
+
+Test the transformation capabilities:
+
+```bash
+# Run transformation tests
+npm run test:transform
+
+# Test individual transformation methods
+node tests/test-mcp-tools.js
+```
 
 ## 🧩 Agent Architecture
 

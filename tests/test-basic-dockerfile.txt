@@ -1,0 +1,38 @@
+# Basic Node.js Application
+# Generated from wiki content
+
+
+FROM node:18-alpine
+
+
+
+WORKDIR /app
+
+
+ {{/each}}
+
+{{/if}}
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+
+RUN npm ci --only=production
+
+
+# Copy source code
+COPY . .
+
+
+
+
+EXPOSE 3000
+
+
+
+
+
+# Start application
+
+CMD ["npm", "start"]
+

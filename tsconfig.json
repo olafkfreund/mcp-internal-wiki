@@ -6,7 +6,21 @@
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "lib": ["ES2020"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/*"],
+      "@transformation/*": ["src/transformation/*"],
+      "@performance/*": ["src/performance/*"],
+      "@sources/*": ["src/sources/*"],
+      "@ai/*": ["src/ai/*"],
+      "@agents/*": ["src/agents/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

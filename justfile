@@ -1,4 +1,5 @@
 # Justfile for MCP Internal Wiki Server
+# Recent additions (May 29, 2025): JSON parsing tests and enhanced POC container validation
 
 # Build the project (TypeScript -> JS)
 build:
@@ -28,6 +29,14 @@ test-interactive:
 test-query:
 	node tests/query-test.js
 
+# Run JSON parsing test
+test-json-parsing:
+	node tests/test-json-parsing.js
+
+# Run complete MCP server test
+test-complete:
+	node tests/test-complete.js
+
 # Run content fetching test
 test-content:
 	node tests/content-fetch-test.js
@@ -40,6 +49,12 @@ test-auth:
 test-all:
 	npm run test:all
 	test test:cache agent-test
+
+# Test JSON parsing and error handling
+test-json-all:
+	just test-json-parsing
+	just test-complete
+	just test-poc-json
 
 # Agent-based tests
 agent-test:
@@ -65,6 +80,10 @@ test-poc-interactive:
 # Run POC container monitor
 test-poc-monitor:
 	cd poc-private-wiki && node monitor-containers.js
+
+# Run POC JSON fixes test
+test-poc-json:
+	cd poc-private-wiki && node test-json-fixes.js
 
 # Run POC test menu
 test-poc-menu:
@@ -101,6 +120,14 @@ docker-poc-up:
 
 docker-poc-down:
 	cd poc-private-wiki && docker compose down
+
+# Build and test POC containers with JSON parsing validation
+docker-poc-test-json:
+	just docker-poc-build
+	just docker-poc-up
+	sleep 10
+	just test-poc-json
+	just docker-poc-down
 
 # Run all POC tests (in containers)
 # Example: just docker-poc-test

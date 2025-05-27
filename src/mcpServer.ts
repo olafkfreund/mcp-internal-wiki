@@ -1,4 +1,8 @@
 import { WikiSource } from './sources/wikiSource';
+import { CodeGenerationAgent } from './agents/CodeGenerationAgent';
+import { ContentTransformer } from './transformation/ContentTransformer';
+import { TemplateEngine } from './transformation/TemplateEngine';
+import { AIService } from './ai/aiService';
 
 export interface MCPRequest {
   jsonrpc: string;
@@ -25,6 +29,8 @@ export interface WikiResult {
 export class MCPServer {
   sources = [new WikiSource()];
   version = '1.0.1'; // Updated version to force reload
+  private codeGenerationAgent?: CodeGenerationAgent;
+  private contentTransformer?: ContentTransformer;
 
   handleRequest(req: MCPRequest, send: (resp: MCPResponse) => void) {
     try {
@@ -59,6 +65,19 @@ export class MCPServer {
           
         case 'listSources':
           this.handleListSources(req, send);
+          break;
+
+        // New transformation methods
+        case 'wiki/transform':
+          this.handleTransform(req, send);
+          break;
+
+        case 'wiki/generate':
+          this.handleGenerate(req, send);
+          break;
+
+        case 'wiki/generateProject':
+          this.handleGenerateProject(req, send);
           break;
           
         default:
@@ -175,6 +194,76 @@ export class MCPServer {
               type: 'object',
               properties: {}
             }
+          },
+          {
+            name: 'transform_content',
+            description: 'Transform wiki content or markdown into executable code in specified programming language',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  description: 'The markdown or wiki content to transform into code'
+                },
+                targetLanguage: {
+                  type: 'string',
+                  description: 'Target programming language (e.g., typescript, python, javascript, etc.)'
+                },
+                framework: {
+                  type: 'string',
+                  description: 'Optional framework to use (e.g., express, fastapi, react)'
+                },
+                projectType: {
+                  type: 'string',
+                  description: 'Optional project type (e.g., api, library, cli)'
+                }
+              },
+              required: ['content', 'targetLanguage']
+            }
+          },
+          {
+            name: 'generate_code',
+            description: 'Generate code from wiki content using templates and AI',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  description: 'The wiki content or documentation to generate code from'
+                },
+                codeType: {
+                  type: 'string',
+                  description: 'Type of code to generate (e.g., dockerfile, typescript, python, yaml)'
+                },
+                templateName: {
+                  type: 'string',
+                  description: 'Optional template name to use for generation'
+                }
+              },
+              required: ['content', 'codeType']
+            }
+          },
+          {
+            name: 'generate_project',
+            description: 'Generate complete project structure from wiki documentation',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  description: 'The wiki content describing the project requirements'
+                },
+                projectType: {
+                  type: 'string',
+                  description: 'Type of project to generate (e.g., express-api, react-app, cli-tool)'
+                },
+                language: {
+                  type: 'string',
+                  description: 'Programming language for the project (e.g., typescript, python, javascript)'
+                }
+              },
+              required: ['content', 'projectType', 'language']
+            }
           }
         ]
       }
@@ -223,6 +312,18 @@ export class MCPServer {
               ]
             }
           });
+          break;
+
+        case 'transform_content':
+          await this.handleTransformTool(args, req.id, send);
+          break;
+
+        case 'generate_code':
+          await this.handleGenerateCodeTool(args, req.id, send);
+          break;
+
+        case 'generate_project':
+          await this.handleGenerateProjectTool(args, req.id, send);
           break;
           
         default:
@@ -336,4 +437,293 @@ export class MCPServer {
       });
     }
   }
+
+  private async initializeTransformationServices(): Promise<void> {
+    try {
+      // Initialize AI service from config
+      const config = require('../mcp.config.json');
+      if (config.ai && config.ai.enabled) {
+        const aiService = new AIService(config.ai);
+        const primaryProvider = aiService.getPrimaryProvider();
+        
+        if (primaryProvider) {
+          this.codeGenerationAgent = new CodeGenerationAgent(primaryProvider);
+          await this.codeGenerationAgent.initialize();
+          
+          // Use absolute path to templates directory
+          const path = require('path');
+          const templateDirectory = path.join(__dirname, '..', 'templates');
+          const templateEngine = new TemplateEngine(templateDirectory);
+          await templateEngine.initialize();
+          this.contentTransformer = new ContentTransformer(primaryProvider, templateEngine);
+          
+          console.log('Transformation services initialized');
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to initialize transformation services:', error);
+    }
+  }
+
+  private async handleTransform(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    if (!this.contentTransformer) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.contentTransformer) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: 'Transformation services not available' }
+      });
+      return;
+    }
+
+    try {
+      const { content, targetLanguage, framework, projectType } = req.params;
+      
+      const result = await this.contentTransformer.transformMarkdownToCode(
+        content, 
+        targetLanguage,
+        { framework, projectType }
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: result
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: `Transformation failed: ${error.message}` }
+      });
+    }
+  }
+
+  private async handleGenerate(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    if (!this.codeGenerationAgent) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.codeGenerationAgent) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: 'Code generation services not available' }
+      });
+      return;
+    }
+
+    try {
+      // Map request parameters to what generateFromWikiContent expects
+      const { content, codeType, templateName } = req.params;
+      const params = {
+        wikiContent: content,
+        targetLanguage: codeType || 'text',
+        template: templateName
+      };
+
+      const result = await this.codeGenerationAgent.run(
+        'generateFromWikiContent',
+        params
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: {
+          success: result && result.length > 0,
+          generatedCode: result && result.length > 0 ? result[0] : null,
+          files: result || []
+        }
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: {
+          success: false,
+          generatedCode: null,
+          error: error.message
+        }
+      });
+    }
+  }
+
+  private async handleGenerateProject(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    if (!this.codeGenerationAgent) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.codeGenerationAgent) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: 'Code generation services not available' }
+      });
+      return;
+    }
+
+    try {
+      const result = await this.codeGenerationAgent.run(
+        'generateProjectStructure',
+        req.params
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: result
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: `Project generation failed: ${error.message}` }
+      });
+    }
+  }
+
+  // Tool handlers for MCP integration
+  private async handleTransformTool(args: any, requestId: string | number, send: (resp: MCPResponse) => void) {
+    if (!this.contentTransformer) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.contentTransformer) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: 'Transformation services not available' }
+      });
+      return;
+    }
+
+    try {
+      const { content, targetLanguage, framework, projectType } = args;
+      
+      const result = await this.contentTransformer.transformMarkdownToCode(
+        content, 
+        targetLanguage,
+        { framework, projectType }
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        }
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: `Transformation failed: ${error.message}` }
+      });
+    }
+  }
+
+  private async handleGenerateCodeTool(args: any, requestId: string | number, send: (resp: MCPResponse) => void) {
+    if (!this.codeGenerationAgent) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.codeGenerationAgent) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: 'Code generation services not available' }
+      });
+      return;
+    }
+
+    try {
+      // Map request parameters to what generateFromWikiContent expects
+      const { content, codeType, templateName } = args;
+      const params = {
+        wikiContent: content,
+        targetLanguage: codeType || 'text',
+        template: templateName
+      };
+
+      const result = await this.codeGenerationAgent.run(
+        'generateFromWikiContent',
+        params
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: result && result.length > 0,
+                generatedCode: result && result.length > 0 ? result[0] : null,
+                files: result || []
+              }, null, 2)
+            }
+          ]
+        }
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: `Code generation failed: ${error.message}` }
+      });
+    }
+  }
+
+  private async handleGenerateProjectTool(args: any, requestId: string | number, send: (resp: MCPResponse) => void) {
+    if (!this.codeGenerationAgent) {
+      await this.initializeTransformationServices();
+    }
+
+    if (!this.codeGenerationAgent) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: 'Code generation services not available' }
+      });
+      return;
+    }
+
+    try {
+      const result = await this.codeGenerationAgent.run(
+        'generateProjectStructure',
+        args
+      );
+
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        }
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: requestId,
+        error: { code: -32000, message: `Project generation failed: ${error.message}` }
+      });
+    }
+  }
+
+  // Legacy direct method handlers
 }

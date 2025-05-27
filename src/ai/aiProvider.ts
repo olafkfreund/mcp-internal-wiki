@@ -25,6 +25,25 @@ export interface AIProvider {
    * @returns Summarized text
    */
   summarizeContent(content: string, maxLength?: number): Promise<string>;
+
+  /**
+   * Generate code from a prompt
+   * @param prompt Code generation prompt
+   * @param language Target programming language
+   * @param context Optional context for code generation
+   * @returns Generated code
+   */
+  generateCode?(prompt: string, language: string, context?: string): Promise<string>;
+
+  /**
+   * Transform content from one format to another
+   * @param content Content to transform
+   * @param sourceFormat Source format (markdown, wiki, etc.)
+   * @param targetFormat Target format (code, documentation, etc.)
+   * @param options Transformation options
+   * @returns Transformed content
+   */
+  transformContent?(content: string, sourceFormat: string, targetFormat: string, options?: any): Promise<string>;
 }
 
 /**

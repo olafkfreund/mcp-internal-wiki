@@ -1,0 +1,68 @@
+# {{title}}
+# Generated from wiki content
+
+{{#if baseImage}}
+FROM {{baseImage}}
+{{else}}
+FROM node:18-alpine
+{{/if}}
+
+{{#if workdir}}
+WORKDIR {{workdir}}
+{{else}}
+WORKDIR /app
+{{/if}}
+
+{{#if packages}}
+# Install system packages
+RUN apk add --no-cache {{#each packages}}{{this}} {{/each}}
+
+{{/if}}
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+{{#if devDependencies}}
+RUN npm ci
+{{else}}
+RUN npm ci --only=production
+{{/if}}
+
+# Copy source code
+COPY . .
+
+{{#if buildCommand}}
+# Build application
+RUN {{buildCommand}}
+
+{{/if}}
+{{#if user}}
+# Create non-root user
+RUN addgroup -g 1001 -S {{user}} && \
+    adduser -S {{user}} -u 1001 && \
+    chown -R {{user}}:{{user}} {{#if workdir}}{{workdir}}{{else}}/app{{/if}}
+
+{{/if}}
+{{#if expose}}
+# Expose port
+EXPOSE {{expose}}
+{{else}}
+EXPOSE 3000
+{{/if}}
+
+{{#if user}}
+USER {{user}}
+{{/if}}
+
+{{#if healthcheck}}
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD {{healthcheck}}
+
+{{/if}}
+# Start application
+{{#if startCommand}}
+CMD ["{{startCommand}}"]
+{{else}}
+CMD ["npm", "start"]
+{{/if}}

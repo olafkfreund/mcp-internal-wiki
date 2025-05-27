@@ -45,7 +45,11 @@ mcp-internal-wiki/
 
 5. **Performance Integration**: Leverage performance optimization components
 
-**Failure to update all environments will result in inconsistent behavior and broken deployments.**
+6. **Installation Documentation**: Update both `LINUX_INSTALLATION.md` and `NIXOS_INSTALLATION.md`
+
+7. **Docker Images**: Rebuild and test all Docker images with the new changes
+
+**Failure to update all environments and documentation will result in inconsistent behavior, broken deployments, and outdated documentation.**
 
 ### Code Organization
 
@@ -252,6 +256,14 @@ The MCP Internal Wiki Server now uses a modular agent-based architecture for all
 
 - Add appropriate test commands for new functionality
 
+- **CRITICAL**: Rebuild and test all Docker images after any feature addition or configuration change:
+  ```bash
+  just docker-poc-build-no-cache
+  just docker-poc-up
+  just test-poc-all
+  just docker-poc-down
+  ```
+
 ### 4. Package.json Scripts
 
 - Add npm scripts for new testing or build features
@@ -260,7 +272,31 @@ The MCP Internal Wiki Server now uses a modular agent-based architecture for all
 
 - Update dependencies when adding new functionality
 
-**Failure to update all environments will result in inconsistent behavior across development setups.**
+### 5. Docker Images
+
+- **CRITICAL**: Update all Docker images when adding features or changing configuration:
+  
+  - Update `Dockerfile` configurations in both main project and POC environment
+  
+  - Rebuild images to include new dependencies or configuration changes
+  
+  - Test images in all environments to ensure consistent behavior
+  
+  - Tag new images with appropriate version numbers
+  
+  - Use `docker-compose.performance.yml` for performance testing with new images
+
+- Docker image rebuild commands:
+  ```bash
+  # Main project images
+  docker build -t mcp-internal-wiki:latest .
+  
+  # Performance test images
+  docker build -f docker/Dockerfile.performance -t mcp-internal-wiki:perf .
+  
+  # POC environment images
+  just docker-poc-build-no-cache
+  ```
 
 ## 📋 Project Maintenance
 
@@ -271,6 +307,23 @@ The MCP Internal Wiki Server now uses a modular agent-based architecture for all
 - Document breaking changes clearly for future reference
 
 - When updating dependencies, verify compatibility with all features and test thoroughly
+
+### 📄 Installation Documentation
+
+**CRITICAL**: Update installation documentation whenever adding features or changing configurations:
+
+- `LINUX_INSTALLATION.md`: Update with new features, configurations, and testing procedures
+  
+- `NIXOS_INSTALLATION.md`: Update NixOS-specific instructions, module options, and examples
+
+- Each installation file must include:
+  1. Updated configuration examples
+  2. New feature documentation
+  3. Testing instructions
+  4. Performance settings if applicable
+  5. Agent configuration if applicable
+  
+- Test both installation methods after updating documentation
 
 ## 🧪 Using the POC Environment
 

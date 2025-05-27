@@ -1,0 +1,44 @@
+/**
+ * {{description}}
+ * Generated from wiki content
+ */
+{{#if imports}}
+{{#each imports}}
+import {{this}};
+{{/each}}
+
+{{/if}}
+{{#if interfaces}}
+{{#each interfaces}}
+interface {{name}} {
+{{#each properties}}
+  {{name}}: {{type}};
+{{/each}}
+}
+
+{{/each}}
+{{/if}}
+export class {{className}} {{#if extends}}extends {{extends}} {{/if}}{{#if implements}}implements {{#each implements}}{{this}}{{#unless @last}}, {{/unless}}{{/each}} {{/fi}} {
+{{#if properties}}
+{{#each properties}}
+  {{#if private}}private {{/if}}{{#if protected}}protected {{/if}}{{#if public}}public {{/if}}{{name}}: {{type}}{{#if defaultValue}} = {{defaultValue}}{{/if}};
+{{/each}}
+
+{{/if}}
+{{#if constructor}}
+  constructor({{#each constructor.parameters}}{{name}}: {{type}}{{#unless @last}}, {{/unless}}{{/each}}) {
+{{#each constructor.body}}
+    {{this}}
+{{/each}}
+  }
+
+{{/if}}
+{{#each methods}}
+  {{#if private}}private {{/if}}{{#if protected}}protected {{/if}}{{#if public}}public {{/if}}{{#if async}}async {{/if}}{{name}}({{#each parameters}}{{name}}: {{type}}{{#unless @last}}, {{/unless}}{{/each}}){{#if returnType}}: {{returnType}}{{/if}} {
+{{#each body}}
+    {{this}}
+{{/each}}
+  }
+
+{{/each}}
+}

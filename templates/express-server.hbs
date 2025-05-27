@@ -1,0 +1,61 @@
+import express from 'express';
+{{#if middleware}}
+{{#each middleware}}
+import {{this}};
+{{/each}}
+{{/if}}
+
+const app = express();
+const PORT = process.env.PORT || {{#if port}}{{port}}{{else}}3000{{/fi}};
+
+// Middleware
+app.use(express.json());
+{{#if corsEnabled}}
+app.use(cors());
+{{/if}}
+{{#if middleware}}
+{{#each middleware}}
+app.use({{this}});
+{{/each}}
+{{/if}}
+
+{{#if routes}}
+// Routes
+{{#each routes}}
+app.{{method}}('{{path}}', {{#if middleware}}{{#each middleware}}{{this}}, {{/each}}{{/if}}(req, res) => {
+  {{#if handler}}
+  {{handler}}
+  {{else}}
+  res.json({ message: '{{description}}' });
+  {{/if}}
+});
+
+{{/each}}
+{{else}}
+// Default route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Welcome to {{#if title}}{{title}}{{else}}the API{{/fi}}',
+    version: '1.0.0'
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+{{/if}}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

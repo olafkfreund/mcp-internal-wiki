@@ -122,4 +122,100 @@ export class OpenAIProvider implements AIProvider {
         : content;
     }
   }
+
+  /**
+   * Generate code from a prompt using OpenAI API
+   */
+  async generateCode(prompt: string, language: string, context?: string): Promise<string> {
+    try {
+      const systemPrompt = `You are an expert ${language} developer. Generate clean, production-ready code based on the user's requirements. 
+Include necessary imports, proper error handling, and clear comments. 
+Follow ${language} best practices and conventions.
+Return only the code, no explanations unless specifically requested.`;
+
+      const userPrompt = context 
+        ? `${prompt}\n\nContext:\n${context}`
+        : prompt;
+
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: this.config.summaryModel || 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.1 // Lower temperature for more consistent code generation
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.config.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error('Error generating code with OpenAI:', error);
+      throw new Error(`Failed to generate code: ${error}`);
+    }
+  }
+
+  /**
+   * Transform content from one format to another using OpenAI API
+   */
+  async transformContent(
+    content: string, 
+    sourceFormat: string, 
+    targetFormat: string, 
+    options: any = {}
+  ): Promise<string> {
+    try {
+      const systemPrompt = `You are an expert content transformer. Convert the provided ${sourceFormat} content to ${targetFormat} format.
+Maintain the core information while adapting to the target format's conventions and best practices.
+${options.language ? `Target language: ${options.language}` : ''}
+${options.framework ? `Target framework: ${options.framework}` : ''}
+${options.style ? `Style requirements: ${options.style}` : ''}`;
+
+      const userPrompt = `Transform this ${sourceFormat} content to ${targetFormat}:\n\n${content}`;
+
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: this.config.summaryModel || 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          max_tokens: options.maxTokens || 2000,
+          temperature: options.temperature || 0.2
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.config.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error('Error transforming content with OpenAI:', error);
+      throw new Error(`Failed to transform content: ${error}`);
+    }
+  }
 }

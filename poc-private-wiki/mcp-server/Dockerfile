@@ -11,15 +11,12 @@ WORKDIR /app
 RUN npm init -y && \
     npm install express axios body-parser marked
 
-# Copy our test server and config from the correct relative path (project root context)
-COPY poc-private-wiki/mcp-server/test-server.js ./server.js
-COPY poc-private-wiki/mcp-server/mcp.config.json ./mcp.config.json
-
-# Copy the compiled JavaScript files from the build context root
-COPY dist ./dist
+# Copy our simplified enhanced test server and config
+COPY simplified-enhanced-server.js ./server.js
+COPY mcp.config.json ./mcp.config.json
 
 # Expose port for HTTP API
 EXPOSE 3000
 
-# Start the server
+# Start the simplified enhanced server with JSON parsing fixes
 CMD ["node", "server.js"]

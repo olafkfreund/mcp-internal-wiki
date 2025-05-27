@@ -25,6 +25,7 @@ The MCP Internal Wiki Server is a production-ready bridge between internal knowl
 - **Automated build workflow** integrated with TypeScript compilation
 
 **Key Components:**
+
 - **MCP Server Container**: Port 3000, full MCP protocol support with authentication
 - **Markdown Server Container**: Port 3001, simulates private wiki with basic auth
 - **Health Monitoring**: Automated health checks and container status monitoring
@@ -33,12 +34,14 @@ The MCP Internal Wiki Server is a production-ready bridge between internal knowl
 ### 2. **Authentication System** *(Completed: May 27, 2025)*
 
 **Supported Authentication Methods:**
+
 - ✅ **Basic Authentication**: Username/password for HTTP Basic Auth
 - ✅ **Token Authentication**: Bearer token authentication  
 - ✅ **Custom Headers**: Flexible header-based authentication
 - ✅ **OAuth 2.0**: Framework ready (not fully implemented in POC)
 
 **Security Features:**
+
 - Secure credential management through configuration files
 - URL pattern matching for multi-source authentication
 - Error handling and retry logic for authentication failures
@@ -46,6 +49,7 @@ The MCP Internal Wiki Server is a production-ready bridge between internal knowl
 ### 3. **Build & Deployment Automation** *(Completed: May 27, 2025)*
 
 **Justfile Commands:**
+
 ```bash
 # Docker POC Management
 just docker-poc-build           # Build containers with TypeScript compilation
@@ -65,6 +69,7 @@ just test-poc-menu             # Interactive test menu
 ### 4. **Comprehensive Testing Suite** *(Completed: May 27, 2025)*
 
 **Test Categories:**
+
 - ✅ **Container Health Tests**: Verify service availability and health
 - ✅ **Basic Authentication Tests**: Direct authentication validation
 - ✅ **Integration Tests**: End-to-end MCP protocol with authentication
@@ -72,6 +77,7 @@ just test-poc-menu             # Interactive test menu
 - ✅ **Monitoring Tools**: Real-time container status and connectivity
 
 **Test Results (Latest Run):**
+
 ```
 ✅ Container Health Monitor: PASS - Both containers healthy
 ✅ Basic Authentication Tests: PASS - All auth methods working
@@ -101,7 +107,8 @@ just test-poc-menu             # Interactive test menu
 
 **Problem Solved:** Fixed TypeScript compilation and Node.js module import issues in containerized environments.
 
-**Solution:** 
+**Solution:**
+
 - Updated require paths from `../../../src/ai/aiService` to `./dist/ai/aiService`
 - Modified Dockerfile COPY commands to use compiled `dist` directory
 - Integrated TypeScript compilation into Docker build workflow
@@ -147,6 +154,7 @@ just docker-poc-down
 ### Production Deployment
 
 1. **Configure Authentication** in `mcp.config.json`:
+
 ```json
 {
   "auth": [
@@ -161,6 +169,7 @@ just docker-poc-down
 ```
 
 2. **Deploy with Docker Compose**:
+
 ```bash
 just docker-poc-build
 just docker-poc-up
@@ -189,6 +198,7 @@ just docker-poc-up
 ## 🎯 Production Readiness
 
 **Ready for Production Use:**
+
 - ✅ Secure authentication handling
 - ✅ Health monitoring and error recovery  
 - ✅ Container orchestration with service dependencies
@@ -197,6 +207,7 @@ just docker-poc-up
 - ✅ Complete documentation and setup guides
 
 **Enterprise Integration Ready:**
+
 - ✅ Multiple authentication methods supported
 - ✅ Configurable URL pattern matching
 - ✅ Docker-based deployment for easy scaling

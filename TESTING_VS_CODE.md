@@ -43,7 +43,7 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 
 1. Open VS Code in this project directory
 
-   ```
+   ```bash
    code .
    ```
 
@@ -53,7 +53,7 @@ This guide provides step-by-step instructions to test the MCP Wiki server with V
 
 3. Open the test file
 
-   ```
+   ```bash
    code tests/test-mcp.md
    ```
 
@@ -70,13 +70,13 @@ If you prefer to test from the command line:
 
 1. Simple automated test:
 
-   ```
+   ```bash
    npm run test:simple
    ```
 
 2. Interactive test client:
 
-   ```
+   ```bash
    npm run test:interactive
    ```
 
@@ -95,13 +95,13 @@ If MCP integration is not working:
 2. Verify that the server is running
 3. Re-run the setup:
 
-   ```
+   ```bash
    npm run setup:vscode
    ```
 
 4. Rebuild the project:
 
-   ```
+   ```bash
    npm run build
    ```
 

@@ -1,0 +1,44 @@
+{
+  "name": "{{projectName}}",
+  "version": "{{version}}",
+  "description": "{{description}}",
+  {{#if private}}
+  "private": true,
+  {{/if}}
+  "main": "{{#if main}}{{main}}{{else}}index.js{{/if}}",
+  "scripts": {
+    {{#if scripts}}
+    {{#each scripts}}
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+    {{else}}
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "build": "tsc"
+    {{/if}}
+  },
+  {{#if keywords}}
+  "keywords": [
+    {{#each keywords}}
+    "{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  ],
+  {{/if}}
+  "author": "{{#if author}}{{author}}{{else}}Generated from wiki{{/if}}",
+  "license": "{{#if license}}{{license}}{{else}}MIT{{/if}}",
+  {{#if dependencies}}
+  "dependencies": {
+    {{#each dependencies}}
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  },
+  {{/if}}
+  {{#if devDependencies}}
+  "devDependencies": {
+    {{#each devDependencies}}
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  }
+  {{/if}}
+}
