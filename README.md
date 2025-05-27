@@ -212,24 +212,38 @@ Supported authentication types:
 
 ## 🧪 Testing
 
-<details>
-<summary>Node.js Testing</summary>
+### Standard Testing Commands
+
+**Node.js Testing**
 
 ```bash
+# Build the project
+npm run build
+# or
+just build
+
 # Run a simple test
 npm run test:simple
+# or
+just test-simple
 
 # Run an interactive test client
 npm run test:interactive
+# or
+just test-interactive
 
 # Run a query test
 npm run test:query
+# or
+just test-query
+
+# Run all tests
+npm run test:all
+# or
+just test-all
 ```
 
-</details>
-
-<details>
-<summary>Nix Testing</summary>
+**Nix Testing**
 
 ```bash
 # Simple test with Nix
@@ -242,11 +256,48 @@ nix run .#interactive
 # or
 just nix-test-interactive
 
-# Query test with Nix
-nix run .#query
+# Build with Nix
+nix build
+# or
+just nix-build
 ```
 
-</details>
+### 🐳 Docker Testing (POC Private Wiki)
+
+The project includes a comprehensive Docker-based POC for testing private wiki authentication:
+
+**Docker POC Commands**
+
+```bash
+# Build POC Docker images (includes TypeScript compilation)
+just docker-poc-build
+
+# Build POC Docker images without cache (for fresh builds)
+just docker-poc-build-no-cache
+
+# Start POC containers (markdown server + MCP server)
+just docker-poc-up
+
+# Stop POC containers
+just docker-poc-down
+
+# Run comprehensive POC test suite
+just docker-poc-test
+
+# Individual POC tests
+just test-auth-poc              # Basic authentication tests
+just test-auth-integration      # Integration authentication tests
+just test-poc-interactive       # Interactive test client
+just test-poc-monitor          # Container health monitoring
+just test-poc-menu             # Interactive test menu
+```
+
+**What the Docker POC demonstrates:**
+- ✅ **Private Wiki Authentication**: MCP server connecting to password-protected wikis
+- ✅ **Containerized Deployment**: Both services running in Docker containers with health checks
+- ✅ **Authentication Methods**: Basic auth, token auth, and custom header authentication
+- ✅ **Integration Testing**: Comprehensive test suite validating all functionality
+- ✅ **Production-Ready**: Real-world deployment scenario with networking and service discovery
 
 ## 🏗️ Architecture
 
