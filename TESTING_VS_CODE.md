@@ -1,28 +1,43 @@
 # Testing MCP Wiki in VS Code
 
-This guide provides step-by-step instructions to test the MCP Wiki server with VS Code.
+This guide provides step-by-step instructions to test the MCP Wiki server with VS Code using the correct `.vscode/mcp.json` configuration.
 
 ## Setup
 
-1. Make sure you have built the project:
+1. **Build the project**:
 
-   ```
+   ```bash
    npm run build
    ```
 
-2. Verify the VS Code settings:
+2. **Verify the VS Code MCP configuration**:
 
+   ```bash
+   cat .vscode/mcp.json
    ```
-   cat .vscode/settings.json
+
+   It should contain the MCP server configuration similar to:
+
+   ```jsonc
+   {
+     "servers": {
+       "my-mcp-wiki-server": {
+         "type": "stdio",
+         "command": "node",
+         "args": ["${workspaceFolder}/dist/server.js"],
+         "env": {
+           "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
+         }
+       }
+     }
+   }
    ```
 
-   It should contain the MCP server configuration.
-
-3. Make sure you have the MCP extension installed in VS Code:
+3. **Install the MCP extension in VS Code**:
    - Open VS Code
    - Go to Extensions (Ctrl+Shift+X)
    - Search for "Copilot MCP"
-   - Verify "Copilot MCP" is installed
+   - Install the "Copilot MCP" extension by AutoMata Labs
 
 ## Test Procedure
 

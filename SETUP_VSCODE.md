@@ -1,6 +1,6 @@
 # MCP Wiki Server - VS Code Integration Guide
 
-This guide will help you set up and test the MCP Wiki Server with Visual Studio Code.
+This guide will help you set up and test the MCP Wiki Server with Visual Studio Code using the correct `.vscode/mcp.json` configuration.
 
 ## Prerequisites
 
@@ -9,24 +9,61 @@ This guide will help you set up and test the MCP Wiki Server with Visual Studio 
 
 ## Setup Steps
 
-### 1. Configure VS Code
+### 1. Configure VS Code MCP Server
 
-1. Open your project folder in VS Code
-2. Create or update `.vscode/settings.json` file with the following configuration:
+Create a `.vscode/mcp.json` file in your workspace root with the following configuration:
 
-```json
+```jsonc
+// .vscode/mcp.json
 {
-  "mcp": {
-    "servers": {
-      "WikiMCP": {
-        "type": "stdio",
-        "command": "node",
-        "args": ["${workspaceFolder}/dist/server.js"]
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/dist/server.js"
+      ],
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
     }
   }
 }
 ```
+
+**Alternative configurations:**
+
+For global installation:
+```jsonc
+// .vscode/mcp.json
+{
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "mcp-wiki-server"
+    }
+  }
+}
+```
+
+For npx usage:
+```jsonc
+// .vscode/mcp.json
+{
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["mcp-internal-wiki"]
+    }
+  }
+}
+```
+
+**Important Notes:**
+- Use `.vscode/mcp.json` (not `.vscode/settings.json`)
+- The `env` section with `MCP_CONFIG_PATH` tells the server where to find your configuration
+- Server name can be any unique identifier (e.g., `my-mcp-wiki-server`)
 
 ### 2. Configure Wiki Sources
 
@@ -37,7 +74,8 @@ Edit the `mcp.config.json` file in the root of your project with your wiki URLs:
   "wikiUrls": [
     "https://your-wiki-url.com",
     "https://another-wiki-url.com"
-  ]
+  ],
+  "cacheTimeoutMinutes": 30
 }
 ```
 

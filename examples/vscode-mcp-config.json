@@ -1,0 +1,50 @@
+// Example VS Code MCP configuration file
+// Save this as .vscode/mcp.json in your workspace root
+{
+    "servers": {
+        // Local development configuration (recommended for development)
+        "mcp-wiki-local": {
+            "type": "stdio",
+            "command": "node",
+            "args": [
+                "${workspaceFolder}/dist/server.js"
+            ],
+            "env": {
+                "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json",
+                "NODE_ENV": "development"
+            }
+        },
+        // Global installation configuration
+        "mcp-wiki-global": {
+            "type": "stdio",
+            "command": "mcp-wiki-server",
+            "env": {
+                "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
+            }
+        },
+        // NPX configuration (no installation required)
+        "mcp-wiki-npx": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "mcp-internal-wiki"
+            ],
+            "env": {
+                "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
+            }
+        },
+        // Production configuration with custom environment
+        "mcp-wiki-production": {
+            "type": "stdio",
+            "command": "node",
+            "args": [
+                "${workspaceFolder}/dist/server.js"
+            ],
+            "env": {
+                "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json",
+                "NODE_ENV": "production",
+                "LOG_LEVEL": "info"
+            }
+        }
+    }
+}

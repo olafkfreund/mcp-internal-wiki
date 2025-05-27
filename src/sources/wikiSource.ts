@@ -79,16 +79,53 @@ export class WikiSource {
   constructor() {
     // Load config from mcp.config.json
     try {
-      const configPath = path.join(process.cwd(), 'mcp.config.json');
-      if (fs.existsSync(configPath)) {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as WikiConfig;
-        
+      // Try multiple possible locations for the config file
+      const possiblePaths = [
+        // First try environment variable if set by VS Code
+        process.env.MCP_CONFIG_PATH,
+        path.join(process.cwd(), 'mcp.config.json'),
+        path.join(__dirname, '..', '..', 'mcp.config.json'),
+        path.join(__dirname, '../../mcp.config.json'),
+        '/home/olafkfreund/Source/mcp-internal-wiki/mcp.config.json'
+      ].filter(Boolean); // Remove undefined values
+      
+      let configPath = '';
+      let config: WikiConfig | null = null;
+      
+      for (const testPath of possiblePaths) {
+        if (!testPath) continue; // Skip undefined paths
+        console.error(`[DEBUG] Testing config path: ${testPath}`);
+        try {
+          if (fs.existsSync(testPath)) {
+            configPath = testPath;
+            console.error(`[DEBUG] Config file found at: ${configPath}`);
+            const configContent = fs.readFileSync(configPath, 'utf8');
+            console.error(`[DEBUG] Config file size: ${configContent.length} bytes`);
+            config = JSON.parse(configContent) as WikiConfig;
+            console.error(`[DEBUG] Successfully parsed config file`);
+            break;
+          } else {
+            console.error(`[DEBUG] Config file does not exist at: ${testPath}`);
+          }
+        } catch (error) {
+          console.error(`[DEBUG] Error checking config path ${testPath}:`, error);
+        }
+      }
+      
+      console.error(`[DEBUG] Current working directory: ${process.cwd()}`);
+      console.error(`[DEBUG] __dirname: ${__dirname}`);
+      console.error(`[DEBUG] process.argv: ${JSON.stringify(process.argv)}`);
+      console.error(`[DEBUG] process.env.PWD: ${process.env.PWD}`);
+      
+      if (config) {
         // Initialize AI service if AI config is present
         if (config.ai) {
+          console.error(`[DEBUG] AI config found, enabled: ${config.ai.enabled}`);
           this.aiService = new AIService(config.ai);
         }
         
         if (config.wikiUrls && Array.isArray(config.wikiUrls)) {
+          console.error(`[DEBUG] Found ${config.wikiUrls.length} wiki URLs in config`);
           // Store auth configs for later use
           this.authConfigs = config.auth || [];
           
@@ -109,7 +146,7 @@ export class WikiSource {
             return entry;
           });
           
-          console.log(`Loaded ${this.wikiEntries.length} wiki sources`);
+          console.error(`Loaded ${this.wikiEntries.length} wiki sources`);
         }
         
         // Set cache timeout if configured
@@ -119,6 +156,8 @@ export class WikiSource {
         
         // Pre-fetch content from wikis in background
         this.prefetchWikiContent();
+      } else {
+        console.error(`[DEBUG] Config file not found at: ${configPath}`);
       }
     } catch (error) {
       console.error('Error loading wiki configuration:', error);
@@ -150,16 +189,16 @@ export class WikiSource {
       name = `Gitbook: ${urlObj.pathname.split('/')[1] || hostname}`;
     } else if (hostname.endsWith('wiki.org') || hostname.includes('mediawiki')) {
       type = WikiType.MediaWiki;
-      name = `MediaWiki: ${hostname}`;
+      name = hostname;
     } else if (hostname.includes('confluence') || url.includes('confluence')) {
       type = WikiType.Confluence;
       name = `Confluence: ${hostname}`;
     } else if (hostname.includes('sharepoint')) {
       type = WikiType.SharePoint;
       name = `SharePoint: ${hostname}`;
-    } else if (url.endsWith('.md') || url.includes('/docs/')) {
+    } else if (url.endsWith('.md') || url.includes('/docs/') || hostname.includes('docs.')) {
       type = WikiType.Markdown;
-      name = `Markdown: ${hostname}${urlObj.pathname}`;
+      name = hostname;
     }
     
     return { url, type, name };
@@ -167,18 +206,18 @@ export class WikiSource {
   
   // Prefetch content from all wikis
   private async prefetchWikiContent(): Promise<void> {
-    console.log('Pre-fetching wiki content...');
+    console.error('Pre-fetching wiki content...');
     
     for (const entry of this.wikiEntries) {
       try {
         await this.fetchWikiContent(entry);
-        console.log(`Fetched content from ${entry.name}`);
+        console.error(`Fetched content from ${entry.name}`);
       } catch (error) {
         console.error(`Failed to fetch content from ${entry.name}:`, error);
       }
     }
     
-    console.log('Wiki content pre-fetch complete');
+    console.error('Wiki content pre-fetch complete');
   }
   
   // Fetch content from a wiki
@@ -189,7 +228,7 @@ export class WikiSource {
       return this.contentCache[entry.url].content;
     }
     
-    console.log(`Fetching content from ${entry.name} (${entry.url})...`);
+    console.error(`Fetching content from ${entry.name} (${entry.url})...`);
     
     try {
       let content = '';
@@ -470,7 +509,7 @@ export class WikiSource {
       return [];
     }
     
-    console.log(`Processing query: "${query}"`);
+    console.error(`Processing query: "${query}"`);
     
     // Extract keywords from the query
     const keywords = this.extractKeywords(query.toLowerCase());
@@ -780,5 +819,55 @@ export class WikiSource {
   private generateSharePointContent(entry: WikiEntry, query: string, keywords: string[]): string {
     // Simulated SharePoint content
     return `<h1>${query}</h1>\n<h2>Document Summary</h2>\n<p>This SharePoint document contains information related to ${keywords.join(', ')}.</p>\n<h2>Key Points</h2>\n<ul>\n  <li>Point 1</li>\n  <li>Point 2</li>\n  <li>Point 3</li>\n</ul>\n<p><a href="${entry.url}">View full document</a></p>`;
+  }
+
+  // Get detailed information about all configured wiki sources
+  getWikiSourceDetails(): Array<{
+    name: string;
+    url: string;
+    type: string;
+    hasAuth: boolean;
+    authType?: string;
+    cached: boolean;
+    cacheTimestamp?: string;
+  }> {
+    return this.wikiEntries.map(entry => ({
+      name: entry.name,
+      url: entry.url,
+      type: entry.type,
+      hasAuth: !!entry.auth,
+      authType: entry.auth?.type,
+      cached: !!this.contentCache[entry.url],
+      cacheTimestamp: this.contentCache[entry.url] ? 
+        new Date(this.contentCache[entry.url].timestamp).toISOString() : 
+        undefined
+    }));
+  }
+
+  // Get summary statistics about wiki sources
+  getWikiSourceStats(): {
+    totalSources: number;
+    sourcesByType: Record<string, number>;
+    authenticatedSources: number;
+    cachedSources: number;
+    cacheTimeoutMinutes: number;
+  } {
+    const sourcesByType: Record<string, number> = {};
+    let authenticatedSources = 0;
+    let cachedSources = 0;
+
+    this.wikiEntries.forEach(entry => {
+      sourcesByType[entry.type] = (sourcesByType[entry.type] || 0) + 1;
+      if (entry.auth) authenticatedSources++;
+      if (this.contentCache[entry.url]) cachedSources++;
+    });
+
+    return {
+      totalSources: this.wikiEntries.length,
+      sourcesByType,
+      authenticatedSources,
+      cachedSources,
+      cacheTimeoutMinutes: this.cacheTimeoutMs / (60 * 1000)
+    };
   }
 }

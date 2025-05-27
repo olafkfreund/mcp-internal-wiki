@@ -187,23 +187,70 @@ Supported authentication types:
 
 ### 4. VS Code Integration
 
-1. Install the [Copilot MCP Extension](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
-2. Configure VS Code to use the MCP server:
+1. **Install the MCP Extension**: Install the [Copilot MCP Extension](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
 
-```json
+2. **Create MCP Configuration**: Configure VS Code to use the MCP server by creating a `.vscode/mcp.json` file in your workspace root:
+
+```jsonc
+// .vscode/mcp.json
 {
-  "mcp": {
-    "servers": {
-      "WikiMCP": {
-        "type": "stdio",
-        "command": "mcp-wiki-server"
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/dist/server.js"
+      ],
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
     }
   }
 }
 ```
 
-3. Restart VS Code or reload the window
+**Alternative configurations:**
+
+For global installation:
+
+```jsonc
+// .vscode/mcp.json
+{
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "mcp-wiki-server",
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
+      }
+    }
+  }
+}
+```
+
+For npx usage:
+
+```jsonc
+// .vscode/mcp.json
+{
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["mcp-internal-wiki"],
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
+      }
+    }
+  }
+}
+```
+
+**📁 Example Configurations**: See the [`examples/`](examples/) directory for complete configuration examples and troubleshooting guides.
+
+**⚡ Quick Reference**: For a concise setup guide, see [VS Code Quick Reference](VSCODE_QUICK_REFERENCE.md).
+
+3. **Restart VS Code**: Restart VS Code or reload the window to apply the configuration
 
 ## 🧩 Agent Architecture
 
@@ -427,6 +474,7 @@ just test-poc-menu             # Interactive test menu
 - [NixOS Installation Guide](NIXOS_INSTALLATION.md)
 - [VS Code Integration Guide](SETUP_VSCODE.md)
 - [VS Code Testing Guide](TESTING_VS_CODE.md)
+- [VS Code Configuration Examples](examples/)
 - [Performance Testing Guide](docs/PERFORMANCE.md)
 - [Performance Optimization Documentation](docs/TESTING-PERFORMANCE.md)
 - [Nix Development Guide](NIX_DEVELOPMENT.md)

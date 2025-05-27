@@ -24,17 +24,35 @@ export interface WikiResult {
 
 export class MCPServer {
   sources = [new WikiSource()];
-  version = '1.0.0';
+  version = '1.0.1'; // Updated version to force reload
 
   handleRequest(req: MCPRequest, send: (resp: MCPResponse) => void) {
     try {
-      console.log(`Handling MCP request: ${req.method}`);
+      // Debug output to stderr to avoid interfering with stdout JSON-RPC
+      console.error(`[DEBUG] Handling MCP request: ${req.method}`);
       
       switch (req.method) {
         case 'initialize':
           this.handleInitialize(req, send);
           break;
           
+        case 'tools/list':
+          this.handleToolsList(req, send);
+          break;
+          
+        case 'tools/call':
+          this.handleToolsCall(req, send);
+          break;
+          
+        case 'resources/list':
+          this.handleResourcesList(req, send);
+          break;
+          
+        case 'resources/read':
+          this.handleResourcesRead(req, send);
+          break;
+          
+        // Legacy support for custom methods
         case 'getContext':
           this.handleGetContext(req, send);
           break;
@@ -66,8 +84,8 @@ export class MCPServer {
       id: req.id,
       result: {
         capabilities: {
-          getContext: true,
-          listSources: true
+          tools: {},
+          resources: {}
         },
         serverInfo: { 
           name: 'MCP Wiki Server',
@@ -127,5 +145,195 @@ export class MCPServer {
       id: req.id,
       result: this.sources.map(s => s.name)
     });
+  }
+
+  // Standard MCP Protocol Methods
+  private handleToolsList(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    send({
+      jsonrpc: '2.0',
+      id: req.id,
+      result: {
+        tools: [
+          {
+            name: 'search_wiki',
+            description: 'Search for information across configured wiki sources including GitBook, NixOS Wiki, GitHub Docs, and NixOS Manual',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query to find relevant wiki content'
+                }
+              },
+              required: ['query']
+            }
+          },
+          {
+            name: 'list_wiki_sources',
+            description: 'List all available wiki sources',
+            inputSchema: {
+              type: 'object',
+              properties: {}
+            }
+          }
+        ]
+      }
+    });
+  }
+
+  private async handleToolsCall(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    const { name, arguments: args } = req.params;
+    
+    try {
+      switch (name) {
+        case 'search_wiki':
+          const results = await this.sources[0].getContext({ query: { text: args.query || '' } });
+          send({
+            jsonrpc: '2.0',
+            id: req.id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(results, null, 2)
+                }
+              ]
+            }
+          });
+          break;
+          
+        case 'list_wiki_sources':
+          const sourceDetails = this.sources[0].getWikiSourceDetails();
+          const sourceStats = this.sources[0].getWikiSourceStats();
+          
+          const formattedOutput = {
+            summary: sourceStats,
+            sources: sourceDetails
+          };
+          
+          send({
+            jsonrpc: '2.0',
+            id: req.id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(formattedOutput, null, 2)
+                }
+              ]
+            }
+          });
+          break;
+          
+        default:
+          send({
+            jsonrpc: '2.0',
+            id: req.id,
+            error: { code: -32601, message: `Unknown tool: ${name}` }
+          });
+      }
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: `Tool execution error: ${error.message}` }
+      });
+    }
+  }
+
+  private handleResourcesList(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    send({
+      jsonrpc: '2.0',
+      id: req.id,
+      result: {
+        resources: [
+          {
+            uri: 'wiki://devops-examples',
+            name: 'DevOps Examples from Real Life',
+            description: 'GitBook containing DevOps examples and best practices',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'wiki://nixos-wiki',
+            name: 'NixOS Wiki',
+            description: 'Community-maintained NixOS documentation',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'wiki://github-docs',
+            name: 'GitHub REST API Docs',
+            description: 'Official GitHub REST API documentation',
+            mimeType: 'text/markdown'
+          },
+          {
+            uri: 'wiki://nixos-manual',
+            name: 'NixOS Manual',
+            description: 'Official NixOS manual and documentation',
+            mimeType: 'text/markdown'
+          }
+        ]
+      }
+    });
+  }
+
+  private async handleResourcesRead(req: MCPRequest, send: (resp: MCPResponse) => void) {
+    const { uri } = req.params;
+    
+    try {
+      // Extract resource identifier from URI
+      const resourceId = uri.replace('wiki://', '');
+      let content = '';
+      
+      switch (resourceId) {
+        case 'devops-examples':
+          // Get content from GitBook source
+          const gitbookResults = await this.sources[0].getContext({ query: { text: 'DevOps examples tutorials guides' } });
+          content = gitbookResults.map(r => `# ${r.title}\n\n${r.content}`).join('\n\n---\n\n');
+          break;
+          
+        case 'nixos-wiki':
+          const nixosResults = await this.sources[0].getContext({ query: { text: 'NixOS configuration installation' } });
+          content = nixosResults.map(r => `# ${r.title}\n\n${r.content}`).join('\n\n---\n\n');
+          break;
+          
+        case 'github-docs':
+          const githubResults = await this.sources[0].getContext({ query: { text: 'GitHub API REST repositories' } });
+          content = githubResults.map(r => `# ${r.title}\n\n${r.content}`).join('\n\n---\n\n');
+          break;
+          
+        case 'nixos-manual':
+          const manualResults = await this.sources[0].getContext({ query: { text: 'NixOS manual configuration options' } });
+          content = manualResults.map(r => `# ${r.title}\n\n${r.content}`).join('\n\n---\n\n');
+          break;
+          
+        default:
+          send({
+            jsonrpc: '2.0',
+            id: req.id,
+            error: { code: -32602, message: `Unknown resource: ${uri}` }
+          });
+          return;
+      }
+      
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: {
+          contents: [
+            {
+              uri: uri,
+              mimeType: 'text/markdown',
+              text: content
+            }
+          ]
+        }
+      });
+    } catch (error: any) {
+      send({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32000, message: `Resource read error: ${error.message}` }
+      });
+    }
   }
 }
