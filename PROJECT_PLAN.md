@@ -86,7 +86,7 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 
 ### Mid-Term Goals (Q3-Q4 2025)
 
-- [ ] Advanced content parsing with AI-assisted relevance scoring
+- [x] Advanced content parsing with AI-assisted relevance scoring
 - [ ] Plugin system for custom wiki source adapters
 - [ ] Offline mode with local content indexing
 - [ ] Performance optimizations for large wiki datasets
@@ -107,3 +107,8 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 - Added content parsing with code block extraction for multiple wiki formats
 - Implemented authentication support for private wikis (May 26, 2025)
 - Testing focus has shifted to real-world wiki examples for better validation
+- Added AI-assisted relevance scoring with support for multiple providers (May 27, 2025)
+- Updated AI models to GPT-4o for enhanced summarization quality (May 27, 2025)
+- Upgraded Gemini model to Gemini 2.5 Pro for improved performance (May 27, 2025)
+- Fixed Azure OpenAI provider with validation, cache management, and updated API version (May 27, 2025)
+- Enhanced Gemini provider with improved validation, cache management, and API versioning (May 27, 2025)

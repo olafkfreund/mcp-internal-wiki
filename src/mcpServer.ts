@@ -99,6 +99,11 @@ export class MCPServer {
       title: result.title || 'Wiki Result',
       url: result.url || '',
       sourceId: result.source || 'wiki',
+      metadata: {
+        relevanceScore: result.relevanceScore !== undefined ? result.relevanceScore : null,
+        summary: result.summary || null,
+        type: result.type || 'unknown'
+      },
       sourceType: result.type || 'unknown',
       timestamp: new Date().toISOString(),
       startPosition: { line: 0, character: 0 },

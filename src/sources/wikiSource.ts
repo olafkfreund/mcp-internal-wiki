@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import { marked } from 'marked';
+import { AIService } from '../ai/aiService';
+import { AIEnhancedWikiContent } from '../ai/types';
 
 // Content cache to avoid repeated requests
 interface CacheEntry {
@@ -14,6 +16,20 @@ interface WikiConfig {
   wikiUrls: string[];
   cacheTimeoutMinutes?: number;
   auth?: WikiAuthConfig[];
+  ai?: {
+    enabled: boolean;
+    primaryProvider: string; // made required, not optional
+    minimumRelevanceScore?: number;
+    contentChunkSize?: number;
+    embeddingCacheTimeMinutes?: number;
+    providers: {
+      [key: string]: {
+        type: string;
+        enabled: boolean;
+        [key: string]: any;
+      };
+    };
+  };
 }
 
 // Authentication configuration for private wikis
@@ -58,6 +74,7 @@ export class WikiSource {
   private contentCache: Record<string, CacheEntry> = {};
   private cacheTimeoutMs: number = 30 * 60 * 1000; // Default: 30 minutes
   private authConfigs: WikiAuthConfig[] = [];
+  private aiService: AIService | null = null;
   
   constructor() {
     // Load config from mcp.config.json
@@ -65,6 +82,11 @@ export class WikiSource {
       const configPath = path.join(process.cwd(), 'mcp.config.json');
       if (fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as WikiConfig;
+        
+        // Initialize AI service if AI config is present
+        if (config.ai) {
+          this.aiService = new AIService(config.ai);
+        }
         
         if (config.wikiUrls && Array.isArray(config.wikiUrls)) {
           // Store auth configs for later use
@@ -441,7 +463,7 @@ export class WikiSource {
     return config;
   }
 
-  async getContext(params: any) {
+  async getContext(params: any): Promise<AIEnhancedWikiContent[]> {
     // Extract query from params
     const query = params?.query?.text || '';
     if (!query) {
@@ -453,7 +475,7 @@ export class WikiSource {
     // Extract keywords from the query
     const keywords = this.extractKeywords(query.toLowerCase());
     
-    const results = [];
+    const results: AIEnhancedWikiContent[] = [];
     const fetchPromises = [];
     
     // Process each wiki entry
@@ -476,7 +498,7 @@ export class WikiSource {
                 url: entry.url,
                 source: this.name,
                 type: entry.type
-              });
+              } as AIEnhancedWikiContent);
             }
           })
       );
@@ -491,13 +513,94 @@ export class WikiSource {
         title: 'Example Wiki Page',
         content: `This is a sample wiki content related to "${query}". Configure wiki URLs in mcp.config.json to get real content.`,
         source: this.name
-      });
+      } as AIEnhancedWikiContent);
+    }
+    
+    // Apply AI-assisted relevance scoring if enabled
+    if (this.aiService && this.aiService.isAvailable()) {
+      try {
+        console.log('Applying AI-assisted relevance scoring...');
+        
+        // Convert results to format expected by AI service
+        const contentsForScoring = results.map(result => ({
+          content: result.content,
+          title: result.title,
+          source: result.source,
+          url: result.url
+        }));
+        
+        // Get the primary provider
+        const primaryProvider = this.aiService.getPrimaryProvider();
+        if (!primaryProvider) {
+          console.log('No AI provider available, using basic relevance scoring');
+          return results;
+        }
+        
+        // Process each content item
+        const scoredResults = await Promise.all(
+          contentsForScoring.map(async (item) => {
+            try {
+              // Calculate relevance score
+              const relevanceScore = await primaryProvider.calculateRelevance(query, item.content);
+              
+              // Generate summary if content is long enough
+              let summary = '';
+              if (item.content.length > 200) {
+                summary = await primaryProvider.summarizeContent(item.content, 200);
+              }
+              
+              return {
+                ...item,
+                relevanceScore,
+                summary
+              };
+            } catch (err) {
+              console.error(`Error scoring content '${item.title}':`, err);
+              return {
+                ...item,
+                relevanceScore: 0.5, // Default score
+                summary: ''
+              };
+            }
+          })
+        );
+        
+        // Sort by relevance score (highest first)
+        const sortedResults = scoredResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        
+        // Filter by minimum relevance score
+        const minScore = this.aiService.getMinimumRelevanceScore();
+        const enhancedResults = sortedResults
+          .filter(result => result.relevanceScore >= minScore)
+          .map(result => ({
+            title: result.title,
+            content: result.content,
+            url: result.url,
+            source: result.source,
+            type: results.find(r => r.title === result.title)?.type,
+            relevanceScore: result.relevanceScore,
+            summary: result.summary
+          } as AIEnhancedWikiContent));
+          
+        console.log(`AI scored ${sortedResults.length} results, ${enhancedResults.length} above threshold`);
+        
+        // If we have AI-scored results, use them; otherwise fall back to original results
+        if (enhancedResults.length > 0) {
+          return enhancedResults;
+        }
+        
+        // Log that we're using basic relevance instead of AI
+        console.log('No results passed AI relevance threshold, using basic relevance scoring');
+      } catch (error) {
+        console.error('Error during AI-assisted relevance scoring:', error);
+        // Continue with regular results on error
+      }
     }
     
     return results;
   }
   
-  private async processWikiEntry(entry: WikiEntry, query: string, keywords: string[]) {
+  private async processWikiEntry(entry: WikiEntry, query: string, keywords: string[]): Promise<AIEnhancedWikiContent | null> {
     try {
       // Fetch content (will use cache if available)
       const content = await this.fetchWikiContent(entry);

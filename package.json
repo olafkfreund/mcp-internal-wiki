@@ -16,6 +16,8 @@
     "test:query": "node tests/query-test.js",
     "test:content": "node tests/content-fetch-test.js",
     "test:auth": "node tests/auth-test.js",
+    "test:ai": "node tests/ai-relevance-test.js",
+    "test:ai:mock": "node tests/test-ai-mocked.js",
     "test:all": "npm run test:simple && npm run test:query && npm run test:content",
     "setup:vscode": "mkdir -p .vscode && echo '{\"mcp\":{\"servers\":{\"WikiMCP\":{\"type\":\"stdio\",\"command\":\"node\",\"args\":[\"${workspaceFolder}/dist/server.js\"]}}}}' > .vscode/settings.json",
     "setup:config": "[ -f \"./mcp.config.json\" ] || echo '{\"wikiUrls\":[\"https://freundcloud.gitbook.io/devops-examples-from-real-life/\",\"https://wiki.nixos.org/wiki/NixOS_Wiki\"],\"cacheTimeoutMinutes\":30}' > mcp.config.json",
