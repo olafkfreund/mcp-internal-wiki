@@ -3,8 +3,7 @@ version: '3'
 services:
   # Markdown Server with Authentication
   markdown-server:
-    build: 
-      context: ./markdown-server
+    image: poc-markdown-server
     ports:
       - "3001:3001"
     networks:
@@ -19,8 +18,7 @@ services:
 
   # MCP Server
   mcp-server:
-    build:
-      context: ./mcp-server
+    image: poc-mcp-server
     ports:
       - "3000:3000"
     networks:

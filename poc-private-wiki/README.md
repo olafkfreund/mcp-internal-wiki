@@ -1,6 +1,6 @@
 # MCP Private Wiki Authentication POC
 
-This Proof of Concept (POC) demonstrates the MCP server's ability to authenticate with private wikis. 
+This Proof of Concept (POC) demonstrates the MCP server's ability to authenticate with private wikis.
 The setup includes:
 
 1. A Docker container running the MCP server
@@ -13,6 +13,7 @@ The setup includes:
 ### Markdown Server
 
 The Markdown server is a simple Express.js application that:
+
 - Serves Markdown files with AWS server documentation (100 servers)
 - Requires Basic Authentication (username: `admin`, password: `secret`)
 - Exposes an API for accessing the documentation
@@ -20,6 +21,7 @@ The Markdown server is a simple Express.js application that:
 ### MCP Server
 
 The MCP server is configured to:
+
 - Connect to the Markdown server
 - Use Basic Authentication to access the protected content
 - Provide the wiki content through its MCP protocol interface
@@ -59,8 +61,8 @@ npm run start:detach
 
 3. Once the containers are running, you can test the setup:
 
-- MCP Server: http://localhost:3000 
-- Markdown Server: http://localhost:3001 (requires authentication)
+- MCP Server: <http://localhost:3000>
+- Markdown Server: <http://localhost:3001> (requires authentication)
 
 ### Testing Authentication
 
@@ -117,13 +119,13 @@ npm run monitor
 See [TEST-IMPROVEMENTS.md](./TEST-IMPROVEMENTS.md) and [TOOLS.md](./TOOLS.md) for details.
 
 3. **Direct Access Test**:
-   - Open a browser and navigate to http://localhost:3001
+   - Open a browser and navigate to <http://localhost:3001>
    - You should be prompted for authentication
    - Enter username: `admin` and password: `secret`
    - The API should respond with information about available endpoints
 
 4. **Manual API Testing**:
-   
+
 ```bash
 # Test direct access to wiki with authentication
 curl -u admin:secret http://localhost:3001/aws-servers
@@ -174,17 +176,20 @@ This POC can be extended in several ways:
 ## Troubleshooting
 
 - If the MCP server can't connect to the Markdown server, check that both containers are running:
+
   ```bash
   docker-compose ps
   ```
 
 - To view logs:
+
   ```bash
   docker-compose logs mcp-server
   docker-compose logs markdown-server
   ```
 
 - To restart the services:
+
   ```bash
   docker-compose restart
   ```

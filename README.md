@@ -21,11 +21,13 @@ MCP Internal Wiki Server is a specialized bridge between your company's knowledg
 ## ✨ Why Use MCP Wiki Server?
 
 ### 🚀 Boost Productivity
+
 - **Instant knowledge access**: No more context switching between your IDE and browser
 - **Consistent information**: Every team member accesses the same up-to-date documentation
 - **Reduced onboarding time**: New developers can find information directly in their workflow
 
 ### 🔄 How It Works
+
 ```
 ┌────────────────┐     ┌────────────────┐     ┌────────────────┐
 │                │     │                │     │                │
@@ -80,6 +82,7 @@ npm install
 # Build the project
 npm run build
 ```
+
 </details>
 
 <details>
@@ -93,6 +96,7 @@ npm install -g mcp-internal-wiki
 # Run the server
 mcp-wiki-server
 ```
+
 </details>
 
 <details>
@@ -102,6 +106,7 @@ mcp-wiki-server
 ```bash
 npx mcp-internal-wiki
 ```
+
 </details>
 
 <details>
@@ -148,21 +153,31 @@ For wikis that require authentication, add an `auth` section to your `mcp.config
   "cacheTimeoutMinutes": 30,
   "auth": [
     {
-      "urlPattern": "private-confluence\\.example\\.com",
+      "urlPattern": "example\\.confluence\\.com",
       "type": "basic",
-      "username": "your-username",
-      "password": "your-password"
+      "username": "username",
+      "password": "password",
+      "comment": "Replace with actual credentials for your Confluence instance"
     },
     {
-      "urlPattern": "github\\.com",
+      "urlPattern": "example\\.sharepoint\\.com",
       "type": "token",
-      "token": "your-github-token"
+      "token": "your-access-token",
+      "comment": "Replace with actual token for your SharePoint instance"
+    },
+    {
+      "urlPattern": "api\\.github\\.com",
+      "type": "custom",
+      "headerName": "Authorization",
+      "headerValue": "token ghp_yourgithubpersonalaccesstoken",
+      "comment": "For accessing private GitHub repositories"
     }
   ]
 }
 ```
 
 Supported authentication types:
+
 - `basic`: Username and password for HTTP Basic Auth
 - `token`: Bearer token authentication
 - `custom`: Custom header authentication
@@ -210,6 +225,7 @@ npm run test:interactive
 # Run a query test
 npm run test:query
 ```
+
 </details>
 
 <details>
@@ -229,6 +245,7 @@ just nix-test-interactive
 # Query test with Nix
 nix run .#query
 ```
+
 </details>
 
 ## 🏗️ Architecture

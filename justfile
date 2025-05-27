@@ -66,6 +66,40 @@ test-poc-menu:
 test-poc-all:
 	cd poc-private-wiki && ./run-all-tests.sh
 
+# Build all POC Docker images from the project root
+# This ensures the build context includes src/ and all needed files
+# Example: just docker-poc-build
+
+docker-poc-build:
+	npm run build
+	docker build -f poc-private-wiki/markdown-server/Dockerfile -t poc-markdown-server .
+	docker build -f poc-private-wiki/mcp-server/Dockerfile -t poc-mcp-server .
+
+# Build all POC Docker images without cache to ensure latest changes
+# Example: just docker-poc-build-no-cache
+docker-poc-build-no-cache:
+	npm run build
+	docker build --no-cache -f poc-private-wiki/markdown-server/Dockerfile -t poc-markdown-server .
+	docker build --no-cache -f poc-private-wiki/mcp-server/Dockerfile -t poc-mcp-server .
+
+# Start all POC containers using docker compose
+# Example: just docker-poc-up
+
+docker-poc-up:
+	cd poc-private-wiki && docker compose up -d
+
+# Stop all POC containers
+# Example: just docker-poc-down
+
+docker-poc-down:
+	cd poc-private-wiki && docker compose down
+
+# Run all POC tests (in containers)
+# Example: just docker-poc-test
+
+docker-poc-test:
+	cd poc-private-wiki && ./run-all-tests.sh
+
 # Set up VS Code MCP integration
 setup-vscode:
 	npm run setup:vscode

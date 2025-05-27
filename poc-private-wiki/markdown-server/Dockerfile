@@ -7,8 +7,8 @@ RUN apk --no-cache add curl
 # Create app directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json ./
+# Copy package.json and package-lock.json from the correct relative path (project root context)
+COPY poc-private-wiki/markdown-server/package.json ./
 
 # Install app dependencies
 RUN npm install
@@ -17,7 +17,7 @@ RUN npm install
 RUN mkdir -p /app/content/aws-servers
 
 # Copy source files
-COPY server.js generate-docs.js ./
+COPY poc-private-wiki/markdown-server/server.js poc-private-wiki/markdown-server/generate-docs.js ./
 
 # Generate AWS server documentation
 RUN node generate-docs.js

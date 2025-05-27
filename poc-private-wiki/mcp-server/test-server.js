@@ -2,6 +2,12 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const { AIService } = require('./dist/ai/aiService');
+const { MockProvider } = require('./dist/ai/mockProvider');
+const { OpenAIProvider } = require('./dist/ai/openAIProvider');
+const { GeminiProvider } = require('./dist/ai/geminiProvider');
+const { AzureOpenAIProvider } = require('./dist/ai/azureOpenAIProvider');
+const { calculateCosineSimilarity } = require('./dist/ai/utilities');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +28,16 @@ const config = {
     password: "secret"
   }]
 };
+
+// Load AI service configuration
+const aiService = new AIService({
+  providers: [
+    new MockProvider(),
+    new OpenAIProvider(),
+    new GeminiProvider(),
+    new AzureOpenAIProvider()
+  ]
+});
 
 // Handle JSON-RPC requests
 app.post('/', async (req, res) => {
@@ -126,7 +142,21 @@ async function handleGetContext(request, res) {
         });
       }
     }
-    
+
+    // AI scoring and summary
+    const provider = aiService.getPrimaryProvider();
+    if (provider) {
+      for (const result of results) {
+        try {
+          result.relevanceScore = await provider.calculateRelevance(query, result.content);
+          result.summary = await provider.summarizeContent(result.content, 200);
+        } catch (err) {
+          result.relevanceScore = 0.5;
+          result.summary = '';
+        }
+      }
+    }
+
     res.json({
       jsonrpc: '2.0',
       id: request.id,
