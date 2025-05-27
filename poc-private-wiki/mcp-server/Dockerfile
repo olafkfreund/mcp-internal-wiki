@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Install required packages
 RUN npm init -y && \
-    npm install express axios body-parser
+    npm install express axios body-parser marked
 
 # Copy our test server and config from the correct relative path (project root context)
 COPY poc-private-wiki/mcp-server/test-server.js ./server.js

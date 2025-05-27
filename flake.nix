@@ -48,6 +48,7 @@
             echo "  just test-content  - Run content fetching test"
             echo "  just test-auth     - Run auth test"
             echo "  just test-all      - Run all main tests"
+            echo "  just agent-test     - Run all agent-based tests"
             echo ""
             echo -e "\033[1;33mPOC Commands:\033[0m"
             echo "  just test-auth-poc         - Run POC auth test"

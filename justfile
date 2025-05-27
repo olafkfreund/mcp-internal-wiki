@@ -39,6 +39,14 @@ test-auth:
 # Run all tests from tests folder
 test-all:
 	npm run test:all
+	test test:cache agent-test
+
+# Agent-based tests
+agent-test:
+	node tests/simple-test.js
+	node tests/ai-relevance-test.js
+	node tests/content-fetch-test.js
+	node tests/test-ai-mocked.js
 
 # Tests from POC Private Wiki folder
 

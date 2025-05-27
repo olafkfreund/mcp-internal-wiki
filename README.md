@@ -205,6 +205,22 @@ Supported authentication types:
 
 3. Restart VS Code or reload the window
 
+## 🧩 Agent Architecture
+
+MCP Internal Wiki Server now uses a modular agent-based architecture for all core features:
+
+- **WikiContentAgent**: Fetches and filters wiki content for queries
+- **AIRelevanceAgent**: Scores content relevance using AI providers
+- **WikiIndexAgent**: Manages (re)building the wiki search index
+
+### How to Use Agents
+
+- Use the agent manager in `src/agents/index.ts` to access and orchestrate agents
+- Run agent-based tests with `just agent-test` or via the Nix shell
+- Agent endpoints are available in the Docker POC for integration testing
+
+See [COPILOT_INSTRUCTIONS.md](.github/COPILOT_INSTRUCTIONS.md) for full agent usage and development guidelines.
+
 ## 🏗️ Use Cases
 
 - **Developer Documentation**: Instant access to API references, code standards, and patterns

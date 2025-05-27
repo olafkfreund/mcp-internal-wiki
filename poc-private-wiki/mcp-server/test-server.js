@@ -8,6 +8,9 @@ const { OpenAIProvider } = require('./dist/ai/openAIProvider');
 const { GeminiProvider } = require('./dist/ai/geminiProvider');
 const { AzureOpenAIProvider } = require('./dist/ai/azureOpenAIProvider');
 const { calculateCosineSimilarity } = require('./dist/ai/utilities');
+const { WikiContentAgent } = require('./dist/agents/WikiContentAgent');
+const { AIRelevanceAgent } = require('./dist/agents/AIRelevanceAgent');
+const { WikiIndexAgent } = require('./dist/agents/WikiIndexAgent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -77,16 +80,28 @@ app.post('/', async (req, res) => {
 });
 
 function handleInitialize(request, res) {
-  res.json({
+  console.log('Handling initialize request:', JSON.stringify(request, null, 2));
+  
+  const response = {
     jsonrpc: '2.0',
     id: request.id,
     result: {
-      name: 'MCP Wiki Server',
-      version: '1.0.0',
-      capabilities: ['fetch-context'],
-      sources: ['wiki']
+      protocolVersion: "2024-11-05",
+      capabilities: {
+        resources: {},
+        tools: {},
+        prompts: {}
+      },
+      serverInfo: {
+        name: "MCP Wiki Server",
+        version: "1.0.0"
+      }
     }
-  });
+  };
+  
+  console.log('Sending initialize response:', JSON.stringify(response, null, 2));
+  res.setHeader('Content-Type', 'application/json');
+  res.json(response);
 }
 
 async function handleGetContext(request, res) {
@@ -224,6 +239,30 @@ function createRequestConfig(authConfig) {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
+});
+
+// Add agent-based endpoints for Docker POC
+app.post('/agent/wiki-content', async (req, res) => {
+  const { query, maxResults, minRelevanceScore } = req.body;
+  const agent = new WikiContentAgent();
+  await agent.initialize();
+  const result = await agent.run({ query, maxResults, minRelevanceScore });
+  await agent.shutdown();
+  res.json(result);
+});
+
+app.post('/agent/ai-relevance', async (req, res) => {
+  const { query, contents, minScore } = req.body;
+  const agent = new AIRelevanceAgent();
+  const result = await agent.run({ query, contents, minScore });
+  res.json(result);
+});
+
+app.post('/agent/wiki-index', async (req, res) => {
+  const { rebuild } = req.body;
+  const agent = new WikiIndexAgent();
+  const result = await agent.run({ rebuild });
+  res.json(result);
 });
 
 // Start the server

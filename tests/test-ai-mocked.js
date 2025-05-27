@@ -9,6 +9,9 @@
 
 const axios = require('axios');
 const { spawn } = require('child_process');
+const { WikiContentAgent } = require('../dist/agents/WikiContentAgent');
+const { AIRelevanceAgent } = require('../dist/agents/AIRelevanceAgent');
+const { WikiIndexAgent } = require('../dist/agents/WikiIndexAgent');
 
 const colors = {
   reset: '\x1b[0m',
@@ -152,3 +155,26 @@ process.on('SIGINT', () => {
   server.kill();
   process.exit(0);
 });
+
+(async () => {
+  console.log('\n[Agent Test] WikiContentAgent:');
+  const contentAgent = new WikiContentAgent({ verbose: true });
+  await contentAgent.initialize();
+  const contentResult = await contentAgent.run({ query: 'NixOS configuration', maxResults: 2 });
+  console.log('WikiContentAgent results:', contentResult.results.length, contentResult.error ? 'Error: ' + contentResult.error : '');
+
+  console.log('\n[Agent Test] AIRelevanceAgent:');
+  const aiAgent = new AIRelevanceAgent();
+  const aiResult = await aiAgent.run({
+    query: 'NixOS configuration',
+    contents: (contentResult.results || []).map(r => ({ title: r.title, content: r.content || r.text, url: r.url }))
+  });
+  console.log('AIRelevanceAgent results:', aiResult.results.length, aiResult.error ? 'Error: ' + aiResult.error : '');
+
+  console.log('\n[Agent Test] WikiIndexAgent:');
+  const indexAgent = new WikiIndexAgent();
+  const indexResult = await indexAgent.run({ rebuild: true });
+  console.log('WikiIndexAgent status:', indexResult.status, indexResult.error ? 'Error: ' + indexResult.error : '');
+
+  await contentAgent.shutdown();
+})();
