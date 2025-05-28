@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Project Status](https://img.shields.io/badge/status-active-success.svg)
-![Last Updated](https://img.shields.io/badge/last%20updated-May%2029%2C%202025-blue.svg)
+![Last Updated](https://img.shields.io/badge/last%20updated-May%2030%2C%202025-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
 </div>
@@ -21,7 +21,7 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 │
 ├─ April  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  MCP Implementation
 │
-├─ May    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░  Packaging & Installation
+├─ May    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  Packaging & Agent Architecture
 │
 └─ June   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Future Enhancements
 ```
@@ -109,7 +109,34 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 - [x] Update test scripts to use proper JSON-RPC format and validate parsing improvements
 - [x] Add detailed debug logging and monitoring for JSON parsing operations
 
+### 10. **Modular Agent Architecture** *(Completed: May 2025)*
+
+- [x] Implement Agent interface for standardized component interactions
+- [x] Create WikiContentAgent for optimized content fetching and filtering
+- [x] Build AIRelevanceAgent for intelligent content scoring and ranking
+- [x] Develop WikiIndexAgent for search index management and optimization
+- [x] Implement CodeGenerationAgent for documentation-to-code transformation
+- [x] Create AgentManager for centralized agent registration and lifecycle control
+- [x] Add agent configuration support in global settings
+- [x] Integrate agent-based approach with MCP protocol handlers
+- [x] Document agent architecture in Linux and NixOS installation guides
+- [x] Create comprehensive tests for all agent components
+
 ## 🚀 Recent Accomplishments
+
+### ✅ **AGENT ARCHITECTURE IMPLEMENTATION** *(May 30, 2025)*
+
+- **Modular Design**: Implemented standardized Agent interface for consistent component development
+- **WikiContentAgent**: Full implementation of content fetching with intelligent caching and filtering
+- **AIRelevanceAgent**: Advanced content scoring with multi-provider AI capabilities
+- **WikiIndexAgent**: Complete search index management with rebuild capabilities
+- **CodeGenerationAgent**: Advanced documentation-to-code transformation with error recovery
+- **Multi-Stage Error Handling**: Robust JSON parsing with fallback mechanisms and detailed debugging
+- **Central Management**: AgentManager for registration, initialization, and controlled shutdown
+- **Framework Integration**: Full agent-based integration with MCP protocol handlers
+- **Configuration System**: Global and per-agent configuration options
+- **Docker Integration**: Extended POC containers with agent endpoint exposure
+- **Documentation**: Updated all installation guides with agent configuration instructions
 
 ### ✅ **JSON PARSING & ERROR HANDLING ENHANCEMENT** *(May 29, 2025)*
 
@@ -151,9 +178,9 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 - **Enhanced Documentation**: Complete rewrite with visual design and clarity
 - **Code Organization**: Professional project structure with dedicated test directories
 
-### 🎯 **PROJECT STATUS: ENTERPRISE READY WITH ENHANCED ERROR HANDLING**
+### 🎯 **PROJECT STATUS: ENTERPRISE READY WITH AGENT ARCHITECTURE**
 
-All major milestones completed including advanced performance optimization, comprehensive VS Code integration, and robust JSON parsing with error recovery. The MCP Internal Wiki Server is now ready for enterprise-scale deployments with:
+All major milestones completed including advanced performance optimization, comprehensive VS Code integration, robust JSON parsing with error recovery, and a fully modular agent-based architecture. The MCP Internal Wiki Server is now ready for enterprise-scale deployments with:
 
 **✅ Core Features:**
 
@@ -161,6 +188,15 @@ All major milestones completed including advanced performance optimization, comp
 - Multi-source wiki integration with authentication
 - Real-time content fetching and processing
 - **Robust JSON parsing with multi-stage error recovery**
+- **Modular agent-based architecture for extensibility**
+
+**✅ Agent Architecture:**
+
+- **WikiContentAgent** for intelligent content fetching and filtering
+- **AIRelevanceAgent** for context-aware relevance scoring
+- **WikiIndexAgent** for optimized search index management
+- **CodeGenerationAgent** for transforming documentation into working code
+- **AgentManager** for unified registration and lifecycle management
 
 **✅ VS Code Integration:**
 
@@ -176,7 +212,7 @@ All major milestones completed including advanced performance optimization, comp
 - Advanced monitoring and metrics collection
 - **Resilient error handling that prevents server crashes from malformed AI responses**
 
-**🎯 Ready for Production Deployment with Enhanced Reliability**
+🎯 **Ready for Production Deployment with Enhanced Reliability and Extensibility**
 
 ## 🔮 Future Roadmap
 
@@ -185,22 +221,26 @@ All major milestones completed including advanced performance optimization, comp
 - [x] Real-time content fetching from wiki sources (replacing simulation)
 - [x] Add caching mechanism for improved performance
 - [x] Support for authentication with private wikis
+- [x] Implement modular agent-based architecture
 - [ ] Create packages for additional Linux distributions (deb, rpm)
 
 ### Mid-Term Goals (Q3-Q4 2025)
 
 - [x] Advanced content parsing with AI-assisted relevance scoring
 - [x] Performance optimizations for large wiki datasets
+- [x] Code generation with AI-powered transformation
 - [ ] Plugin system for custom wiki source adapters
 - [ ] Offline mode with local content indexing
+- [ ] Agent extension framework for third-party components
 
 ### Long-Term Vision (2026+)
 
 - [ ] Web UI for configuring and managing wiki sources
 - [ ] Custom VS Code extension with enhanced visual features
-- [ ] Content transformation and code generation capabilities
+- [x] Content transformation and code generation capabilities
 - [ ] Collaborative features for team knowledge management
 - [ ] Enterprise integration with SSO and governance controls
+- [ ] Advanced agent orchestration for complex workflows
 
 ## 📝 Development Notes
 
@@ -215,3 +255,8 @@ All major milestones completed including advanced performance optimization, comp
 - Upgraded Gemini model to Gemini 2.5 Pro for improved performance (May 27, 2025)
 - Fixed Azure OpenAI provider with validation, cache management, and updated API version (May 27, 2025)
 - Enhanced Gemini provider with improved validation, cache management, and API versioning (May 27, 2025)
+- Implemented robust JSON parsing with multi-stage error recovery (May 29, 2025)
+- Developed comprehensive modular agent architecture for extensibility (May 30, 2025)
+- Created AgentManager for centralized agent registration and lifecycle control (May 30, 2025)
+- Built CodeGenerationAgent with advanced markdown-to-code transformation (May 30, 2025)
+- Added full configuration support for agent-based architecture (May 30, 2025)
