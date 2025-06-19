@@ -191,20 +191,19 @@ Supported authentication types:
 
 ### 4. VS Code Integration
 
-1. **Install the MCP Extension**: Install the [Copilot MCP Extension](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
+To use the MCP Internal Wiki Server with VS Code:
 
-2. **Create MCP Configuration**: Configure VS Code to use the MCP server by creating a `.vscode/mcp.json` file in your workspace root:
+1. **Install the Copilot MCP Extension**: [Marketplace Link](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
+2. **Configure the MCP server**:
+   - Create `.vscode/mcp.json` in your workspace root:
 
 ```jsonc
-// .vscode/mcp.json
 {
   "servers": {
     "my-mcp-wiki-server": {
       "type": "stdio",
       "command": "node",
-      "args": [
-        "${workspaceFolder}/dist/server.js"
-      ],
+      "args": ["${workspaceFolder}/dist/server.js"],
       "env": {
         "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
@@ -213,17 +212,31 @@ Supported authentication types:
 }
 ```
 
-**Alternative configurations:**
+   - For global install, use `"command": "mcp-wiki-server"`.
+   - For npx, use `"command": "npx", "args": ["mcp-internal-wiki"]`.
+3. **Restart VS Code** to apply the configuration.
+4. **Test integration**:
+   - Open a markdown file and type a query related to your wiki content.
+   - The MCP extension should provide completions or context from your wiki sources.
+5. **Troubleshooting**:
+   - Check the VS Code Output panel (MCP channel) for logs.
+   - Ensure the MCP server is running and `mcp.config.json` is valid.
+   - See `TESTING_VS_CODE.md` and `VSCODE_QUICK_REFERENCE.md` for more help.
 
-For global installation:
+## VS Code Integration and Testing
+
+### Setup
+
+1. Install the Copilot MCP Extension from the VS Code Marketplace.
+2. Create `.vscode/mcp.json` in your workspace root:
 
 ```jsonc
-// .vscode/mcp.json
 {
   "servers": {
     "my-mcp-wiki-server": {
       "type": "stdio",
-      "command": "mcp-wiki-server",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/server.js"],
       "env": {
         "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
@@ -232,29 +245,22 @@ For global installation:
 }
 ```
 
-For npx usage:
+- For global install, use `"command": "mcp-wiki-server"`.
+- For npx, use `"command": "npx", "args": ["mcp-internal-wiki"]`.
 
-```jsonc
-// .vscode/mcp.json
-{
-  "servers": {
-    "my-mcp-wiki-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["mcp-internal-wiki"],
-      "env": {
-        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
-      }
-    }
-  }
-}
-```
+3. Restart VS Code to apply the configuration.
 
-**📁 Example Configurations**: See the [`examples/`](examples/) directory for complete configuration examples and troubleshooting guides.
+### Testing
 
-**⚡ Quick Reference**: For a concise setup guide, see [VS Code Quick Reference](VSCODE_QUICK_REFERENCE.md).
+- Open a markdown file and type a query related to your wiki content.
+- The MCP extension should provide completions or context from your wiki sources.
+- Run `npm run test:simple` or `npm run test:interactive` for CLI validation.
 
-3. **Restart VS Code**: Restart VS Code or reload the window to apply the configuration
+### Troubleshooting
+
+- Check the VS Code Output panel (MCP channel) for logs.
+- Ensure the MCP server is running and `mcp.config.json` is valid.
+- See `TESTING_VS_CODE.md` and `VSCODE_QUICK_REFERENCE.md` for more help.
 
 ## 🚀 Content Transformation & Code Generation
 

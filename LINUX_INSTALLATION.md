@@ -41,43 +41,32 @@ This will also create a default configuration file if one doesn't exist.
 
 ## VS Code Integration
 
-After installing the server, you need to configure VS Code to use it:
+After installing the server, configure VS Code:
 
-### Automatic Setup
+1. Install the Copilot MCP Extension from the VS Code Marketplace.
+2. Create or edit `.vscode/mcp.json` with:
 
-Run this command in your project directory:
-
-```bash
-# Create VS Code settings for the current project
-echo '{
-  "mcp": {
-    "servers": {
-      "WikiMCP": {
-        "type": "stdio",
-        "command": "mcp-wiki-server"
-      }
-    }
-  }
-}' > .vscode/settings.json
-```
-
-### Manual VS Code Setup
-
-1. Install the [Copilot MCP Extension](https://marketplace.visualstudio.com/items?itemName=automatalabs.copilot-mcp)
-2. Create or edit `.vscode/settings.json` with:
-
-```json
+```jsonc
 {
-  "mcp": {
-    "servers": {
-      "WikiMCP": {
-        "type": "stdio",
-        "command": "mcp-wiki-server"
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/server.js"],
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
     }
   }
 }
 ```
+
+- For global install, use `"command": "mcp-wiki-server"`.
+- For npx, use `"command": "npx", "args": ["mcp-internal-wiki"]`.
+
+3. Restart VS Code to apply the configuration.
+4. Test by opening a markdown file and typing a query related to your wiki content.
+5. For troubleshooting, see `TESTING_VS_CODE.md` and `VSCODE_QUICK_REFERENCE.md`.
 
 ## Testing the Installation
 

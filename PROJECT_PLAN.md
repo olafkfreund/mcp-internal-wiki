@@ -173,7 +173,7 @@ Build an MCP server to reference and index wiki content from multiple URLs, enab
 
 - **Real-time Wiki Integration**: Actual content fetching from wiki sources with intelligent caching
 - **Multi-Platform Support**: Installation methods for Linux, NixOS, and global npm installation
-- **VS Code Integration**: Seamless integration with VS Code via MCP extension
+- **VS Code Integration**: Seamless integration with VS Code via MCP extension, including `.vscode/mcp.json` configuration, environment variable support, and example configurations for deployment scenarios
 - **Comprehensive Testing**: Interactive test tools and automated validation
 - **Enhanced Documentation**: Complete rewrite with visual design and clarity
 - **Code Organization**: Professional project structure with dedicated test directories

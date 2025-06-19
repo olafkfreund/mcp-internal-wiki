@@ -105,24 +105,32 @@ Create a `mcp.config.json` file in your working directory:
 
 ## VS Code Integration on NixOS
 
-When using VS Code on NixOS, you can set up the integration using:
+After installing the server, configure VS Code:
 
-```bash
-# Create VS Code settings
-mkdir -p .vscode
-cat > .vscode/settings.json << 'EOF'
+1. Install the Copilot MCP Extension from the VS Code Marketplace.
+2. Create or edit `.vscode/mcp.json` with:
+
+```jsonc
 {
-  "mcp": {
-    "servers": {
-      "WikiMCP": {
-        "type": "stdio",
-        "command": "mcp-wiki-server"
+  "servers": {
+    "my-mcp-wiki-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/server.js"],
+      "env": {
+        "MCP_CONFIG_PATH": "${workspaceFolder}/mcp.config.json"
       }
     }
   }
 }
-EOF
 ```
+
+- For global install, use `"command": "mcp-wiki-server"`.
+- For npx, use `"command": "npx", "args": ["mcp-internal-wiki"]`.
+
+3. Restart VS Code to apply the configuration.
+4. Test by opening a markdown file and typing a query related to your wiki content.
+5. For troubleshooting, see `TESTING_VS_CODE.md` and `VSCODE_QUICK_REFERENCE.md`.
 
 Alternatively, you can use the built-in setup script from the flake:
 
