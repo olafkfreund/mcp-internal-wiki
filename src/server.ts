@@ -24,3 +24,21 @@ process.stdin.on('data', (chunk) => {
     }
   }
 });
+
+// Handle graceful shutdown
+const shutdown = async () => {
+  console.error('[INFO] Received shutdown signal, cleaning up...');
+  try {
+    await server.shutdown();
+    process.exit(0);
+  } catch (error) {
+    console.error('[ERROR] Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+process.on('exit', () => {
+  console.error('[INFO] MCP server process exiting');
+});

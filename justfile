@@ -63,6 +63,51 @@ agent-test:
 	node tests/content-fetch-test.js
 	node tests/test-ai-mocked.js
 
+# Offline functionality tests
+test-offline:
+	node tests/test-offline.js
+
+# Test offline mode functionality
+test-offline-mode:
+	just build
+	node tests/test-offline.js
+
+# Test offline sync functionality
+test-offline-sync:
+	just build
+	node -e "
+	const { WikiSource } = require('./dist/sources/wikiSource.js');
+	const { WikiOfflineIntegration } = require('./dist/offline/index.js');
+	async function testSync() {
+	  const wiki = new WikiSource();
+	  const offline = new WikiOfflineIntegration(wiki);
+	  await offline.initialize();
+	  console.log('Testing sync...');
+	  const stats = await offline.syncAllSources();
+	  console.log('Sync results:', stats);
+	  await offline.shutdown();
+	}
+	testSync().catch(console.error);
+	"
+
+# Test offline search functionality
+test-offline-search:
+	just build
+	node -e "
+	const { WikiSource } = require('./dist/sources/wikiSource.js');
+	const { WikiOfflineIntegration } = require('./dist/offline/index.js');
+	async function testSearch() {
+	  const wiki = new WikiSource();
+	  const offline = new WikiOfflineIntegration(wiki);
+	  await offline.initialize();
+	  console.log('Testing offline search...');
+	  const results = await offline.searchOffline({query: 'configuration', limit: 5});
+	  console.log('Search results:', results.length, 'items found');
+	  await offline.shutdown();
+	}
+	testSearch().catch(console.error);
+	"
+
 # Tests from POC Private Wiki folder
 
 # Run auth POC test
@@ -182,3 +227,51 @@ nix-setup-vscode:
 # Update Nix flake
 nix-update:
 	nix flake update
+
+# Package Management Commands
+
+# Build all distribution packages (deb, rpm, source)
+package-all:
+	./packaging/build-packages.sh all
+
+# Build only Debian package
+package-deb:
+	./packaging/build-packages.sh deb
+
+# Build only RPM package
+package-rpm:
+	./packaging/build-packages.sh rpm
+
+# Create source package
+package-source:
+	./packaging/build-packages.sh source
+
+# Test package installation (requires sudo)
+test-package-deb:
+	sudo dpkg -i dist/packages/mcp-internal-wiki_*_all.deb || echo "Package testing complete"
+
+# Test package removal (requires sudo)
+test-package-remove-deb:
+	sudo dpkg -r mcp-internal-wiki || echo "Package removal complete"
+
+# Full package testing cycle (requires sudo)
+test-package-full:
+	sudo ./packaging/test-packages.sh full
+
+# Test package installation only (requires sudo)
+test-package-install:
+	sudo ./packaging/test-packages.sh install
+
+# Test installed package functionality (requires sudo)
+test-package-functionality:
+	sudo ./packaging/test-packages.sh test
+
+# Show package contents
+package-info-deb:
+	dpkg -c dist/packages/mcp-internal-wiki_*_all.deb
+
+# Clean package build artifacts
+package-clean:
+	rm -rf build/
+	rm -rf dist/packages/
+	rm -rf packaging/rpm/{BUILD,RPMS,SRPMS}/*

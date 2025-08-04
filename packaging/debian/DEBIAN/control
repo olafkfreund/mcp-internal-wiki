@@ -1,0 +1,21 @@
+Package: mcp-internal-wiki
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: nodejs (>= 18.0.0)
+Maintainer: MCP Internal Wiki Team <maintainer@example.com>
+Description: Model Context Protocol server for internal wiki content
+ MCP Internal Wiki Server enables seamless integration of internal wiki
+ content with VS Code and other MCP-compatible editors. Features include
+ real-time content fetching, intelligent caching, AI-powered relevance
+ scoring, and comprehensive authentication support.
+ .
+ Key features:
+  * Multi-source wiki integration with authentication
+  * Enterprise-grade performance optimization
+  * Modular agent-based architecture
+  * VS Code integration via MCP protocol
+  * Docker containerization support
+  * NixOS and Linux distribution packages
+Homepage: https://github.com/your-org/mcp-internal-wiki

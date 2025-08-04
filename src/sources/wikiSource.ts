@@ -2,50 +2,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import { marked } from 'marked';
+import { LRUCache } from 'lru-cache';
 import { AIService } from '../ai/aiService';
 import { AIEnhancedWikiContent } from '../ai/types';
+import { ConfigManager, WikiConfig, WikiAuthConfig } from '../config/validation';
 
 // Content cache to avoid repeated requests
 interface CacheEntry {
   content: string;
   timestamp: number;
   searchIndex: Record<string, number>; // Keyword -> relevance score
-}
-
-interface WikiConfig {
-  wikiUrls: string[];
-  cacheTimeoutMinutes?: number;
-  auth?: WikiAuthConfig[];
-  ai?: {
-    enabled: boolean;
-    primaryProvider: string; // made required, not optional
-    minimumRelevanceScore?: number;
-    contentChunkSize?: number;
-    embeddingCacheTimeMinutes?: number;
-    providers: {
-      [key: string]: {
-        type: string;
-        enabled: boolean;
-        [key: string]: any;
-      };
-    };
-  };
-}
-
-// Authentication configuration for private wikis
-interface WikiAuthConfig {
-  urlPattern: string;  // Regex pattern to match URLs that need this auth
-  type: 'basic' | 'token' | 'oauth' | 'custom';
-  username?: string;  // For basic auth
-  password?: string;  // For basic auth
-  token?: string;     // For token auth
-  headerName?: string; // For custom header auth (e.g., 'Authorization')
-  headerValue?: string; // Value for the custom header
-  oauthConfig?: {      // For OAuth
-    clientId: string;
-    clientSecret: string;
-    tokenUrl: string;
-  };
 }
 
 // Wiki source types supported
@@ -71,96 +37,80 @@ interface WikiEntry {
 export class WikiSource {
   name = 'wiki';
   private wikiEntries: WikiEntry[] = [];
-  private contentCache: Record<string, CacheEntry> = {};
+  private contentCache: LRUCache<string, CacheEntry>;
   private cacheTimeoutMs: number = 30 * 60 * 1000; // Default: 30 minutes
   private authConfigs: WikiAuthConfig[] = [];
   private aiService: AIService | null = null;
+  private configManager: ConfigManager;
   
   constructor() {
-    // Load config from mcp.config.json
+    this.configManager = ConfigManager.getInstance();
+    
+    // Initialize optimized cache
+    this.contentCache = new LRUCache<string, CacheEntry>({
+      max: 1000, // Maximum 1000 cached items
+      ttl: this.cacheTimeoutMs,
+      updateAgeOnGet: true,
+      allowStale: true
+    });
+
+    this.initializeFromConfig();
+  }
+
+  private async initializeFromConfig() {
     try {
-      // Try multiple possible locations for the config file
-      const possiblePaths = [
-        // First try environment variable if set by VS Code
-        process.env.MCP_CONFIG_PATH,
-        path.join(process.cwd(), 'mcp.config.json'),
-        path.join(__dirname, '..', '..', 'mcp.config.json'),
-        path.join(__dirname, '../../mcp.config.json'),
-        '/home/olafkfreund/Source/mcp-internal-wiki/mcp.config.json'
-      ].filter(Boolean); // Remove undefined values
+      const config = await this.configManager.loadConfig();
       
-      let configPath = '';
-      let config: WikiConfig | null = null;
+      // Initialize AI service if AI config is present
+      if (config.ai) {
+        console.error(`[DEBUG] AI config found, enabled: ${config.ai.enabled}`);
+        this.aiService = new AIService(config.ai);
+      }
       
-      for (const testPath of possiblePaths) {
-        if (!testPath) continue; // Skip undefined paths
-        console.error(`[DEBUG] Testing config path: ${testPath}`);
-        try {
-          if (fs.existsSync(testPath)) {
-            configPath = testPath;
-            console.error(`[DEBUG] Config file found at: ${configPath}`);
-            const configContent = fs.readFileSync(configPath, 'utf8');
-            console.error(`[DEBUG] Config file size: ${configContent.length} bytes`);
-            config = JSON.parse(configContent) as WikiConfig;
-            console.error(`[DEBUG] Successfully parsed config file`);
-            break;
-          } else {
-            console.error(`[DEBUG] Config file does not exist at: ${testPath}`);
+      if (config.wikiUrls && Array.isArray(config.wikiUrls)) {
+        console.error(`[DEBUG] Found ${config.wikiUrls.length} wiki URLs in config`);
+        // Store auth configs for later use
+        this.authConfigs = config.auth || [];
+        
+        // Parse each wiki URL and assign auth if applicable
+        this.wikiEntries = config.wikiUrls.map(url => {
+          const entry = this.parseWikiUrl(url);
+          
+          // Check if this wiki needs authentication
+          const authConfig = this.findAuthConfigForUrl(url);
+          if (authConfig) {
+            entry.auth = {
+              type: authConfig.type,
+              config: authConfig
+            };
+            console.log(`Applied ${authConfig.type} authentication for ${entry.name}`);
           }
-        } catch (error) {
-          console.error(`[DEBUG] Error checking config path ${testPath}:`, error);
-        }
+          
+          return entry;
+        });
+        
+        console.error(`Loaded ${this.wikiEntries.length} wiki sources`);
       }
       
-      console.error(`[DEBUG] Current working directory: ${process.cwd()}`);
-      console.error(`[DEBUG] __dirname: ${__dirname}`);
-      console.error(`[DEBUG] process.argv: ${JSON.stringify(process.argv)}`);
-      console.error(`[DEBUG] process.env.PWD: ${process.env.PWD}`);
-      
-      if (config) {
-        // Initialize AI service if AI config is present
-        if (config.ai) {
-          console.error(`[DEBUG] AI config found, enabled: ${config.ai.enabled}`);
-          this.aiService = new AIService(config.ai);
-        }
-        
-        if (config.wikiUrls && Array.isArray(config.wikiUrls)) {
-          console.error(`[DEBUG] Found ${config.wikiUrls.length} wiki URLs in config`);
-          // Store auth configs for later use
-          this.authConfigs = config.auth || [];
-          
-          // Parse each wiki URL and assign auth if applicable
-          this.wikiEntries = config.wikiUrls.map(url => {
-            const entry = this.parseWikiUrl(url);
-            
-            // Check if this wiki needs authentication
-            const authConfig = this.findAuthConfigForUrl(url);
-            if (authConfig) {
-              entry.auth = {
-                type: authConfig.type,
-                config: authConfig
-              };
-              console.log(`Applied ${authConfig.type} authentication for ${entry.name}`);
-            }
-            
-            return entry;
-          });
-          
-          console.error(`Loaded ${this.wikiEntries.length} wiki sources`);
-        }
-        
-        // Set cache timeout if configured
-        if (config.cacheTimeoutMinutes) {
-          this.cacheTimeoutMs = config.cacheTimeoutMinutes * 60 * 1000;
-        }
-        
-        // Pre-fetch content from wikis in background
-        this.prefetchWikiContent();
-      } else {
-        console.error(`[DEBUG] Config file not found at: ${configPath}`);
+      // Set cache timeout if configured
+      if (config.cacheTimeoutMinutes) {
+        this.cacheTimeoutMs = config.cacheTimeoutMinutes * 60 * 1000;
+        // Update cache TTL
+        this.contentCache = new LRUCache<string, CacheEntry>({
+          max: 1000,
+          ttl: this.cacheTimeoutMs,
+          updateAgeOnGet: true,
+          allowStale: true
+        });
       }
+      
+      // Pre-fetch content from wikis in background
+      this.prefetchWikiContent();
     } catch (error) {
-      console.error('Error loading wiki configuration:', error);
+      console.error('[WIKI-SOURCE] Error loading configuration:', error);
+      // Initialize with empty configuration to prevent crashes
+      this.wikiEntries = [];
+      this.authConfigs = [];
     }
   }
   
@@ -223,9 +173,9 @@ export class WikiSource {
   // Fetch content from a wiki
   private async fetchWikiContent(entry: WikiEntry): Promise<string> {
     // Check cache first
-    if (this.contentCache[entry.url] && 
-        (Date.now() - this.contentCache[entry.url].timestamp) < this.cacheTimeoutMs) {
-      return this.contentCache[entry.url].content;
+    const cached = this.contentCache.get(entry.url);
+    if (cached) {
+      return cached.content;
     }
     
     console.error(`Fetching content from ${entry.name} (${entry.url})...`);
@@ -257,20 +207,21 @@ export class WikiSource {
       const searchIndex = this.buildSearchIndex(content);
       
       // Cache the content
-      this.contentCache[entry.url] = {
+      this.contentCache.set(entry.url, {
         content,
         timestamp: Date.now(),
         searchIndex
-      };
+      });
       
       return content;
     } catch (error) {
       console.error(`Error fetching content from ${entry.url}:`, error);
       
       // If we previously had cached content, use it even if expired
-      if (this.contentCache[entry.url]) {
-        console.log(`Using expired cached content for ${entry.url}`);
-        return this.contentCache[entry.url].content;
+      const staleCache = this.contentCache.get(entry.url);
+      if (staleCache) {
+        console.log(`Using stale cached content for ${entry.url}`);
+        return staleCache.content;
       }
       
       // Otherwise fall back to simulated content
@@ -837,9 +788,9 @@ export class WikiSource {
       type: entry.type,
       hasAuth: !!entry.auth,
       authType: entry.auth?.type,
-      cached: !!this.contentCache[entry.url],
-      cacheTimestamp: this.contentCache[entry.url] ? 
-        new Date(this.contentCache[entry.url].timestamp).toISOString() : 
+      cached: this.contentCache.has(entry.url),
+      cacheTimestamp: this.contentCache.has(entry.url) ? 
+        new Date(this.contentCache.get(entry.url)!.timestamp).toISOString() : 
         undefined
     }));
   }
@@ -859,7 +810,7 @@ export class WikiSource {
     this.wikiEntries.forEach(entry => {
       sourcesByType[entry.type] = (sourcesByType[entry.type] || 0) + 1;
       if (entry.auth) authenticatedSources++;
-      if (this.contentCache[entry.url]) cachedSources++;
+      if (this.contentCache.has(entry.url)) cachedSources++;
     });
 
     return {

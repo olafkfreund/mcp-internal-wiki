@@ -430,6 +430,96 @@
             cd "$(pwd)/poc-private-wiki" && ./run-all-tests.sh
           '');
         };
+
+        # Offline functionality apps
+        apps.testoffline = {
+          type = "app";
+          program = toString (pkgs.writeShellScript "mcp-wiki-test-offline" ''
+            echo "Building project for offline tests..."
+            ${nodejs}/bin/npm run build
+            echo "Running offline functionality test..."
+            ${nodejs}/bin/node $(pwd)/tests/test-offline.js
+          '');
+        };
+
+        apps.testsync = {
+          type = "app";
+          program = toString (pkgs.writeShellScript "mcp-wiki-test-sync" ''
+            echo "Building project for sync test..."
+            ${nodejs}/bin/npm run build
+            echo "Testing offline sync functionality..."
+            ${nodejs}/bin/node -e "
+            const { WikiSource } = require('./dist/sources/wikiSource.js');
+            const { WikiOfflineIntegration } = require('./dist/offline/index.js');
+            async function testSync() {
+              const wiki = new WikiSource();
+              const offline = new WikiOfflineIntegration(wiki);
+              await offline.initialize();
+              console.log('Testing sync...');
+              const stats = await offline.syncAllSources();
+              console.log('Sync results:', stats);
+              await offline.shutdown();
+            }
+            testSync().catch(console.error);
+            "
+          '');
+        };
+
+        apps.testsearch = {
+          type = "app";
+          program = toString (pkgs.writeShellScript "mcp-wiki-test-search" ''
+            echo "Building project for search test..."
+            ${nodejs}/bin/npm run build
+            echo "Testing offline search functionality..."
+            ${nodejs}/bin/node -e "
+            const { WikiSource } = require('./dist/sources/wikiSource.js');
+            const { WikiOfflineIntegration } = require('./dist/offline/index.js');
+            async function testSearch() {
+              const wiki = new WikiSource();
+              const offline = new WikiOfflineIntegration(wiki);
+              await offline.initialize();
+              console.log('Testing offline search...');
+              const results = await offline.searchOffline({query: 'configuration', limit: 5});
+              console.log('Search results:', results.length, 'items found');
+              await offline.shutdown();
+            }
+            testSearch().catch(console.error);
+            "
+          '');
+        };
+
+        # Packaging apps
+        apps.package-all = {
+          type = "app";
+          program = "${pkgs.writeShellScript "package-all" ''
+            cd ${./.}
+            ${pkgs.bash}/bin/bash ./packaging/build-packages.sh all
+          ''}";
+        };
+
+        apps.package-deb = {
+          type = "app";
+          program = "${pkgs.writeShellScript "package-deb" ''
+            cd ${./.}
+            ${pkgs.bash}/bin/bash ./packaging/build-packages.sh deb
+          ''}";
+        };
+
+        apps.package-rpm = {
+          type = "app";
+          program = "${pkgs.writeShellScript "package-rpm" ''
+            cd ${./.}
+            ${pkgs.bash}/bin/bash ./packaging/build-packages.sh rpm
+          ''}";
+        };
+
+        apps.package-source = {
+          type = "app";
+          program = "${pkgs.writeShellScript "package-source" ''
+            cd ${./.}
+            ${pkgs.bash}/bin/bash ./packaging/build-packages.sh source
+          ''}";
+        };
       }
     );
 }

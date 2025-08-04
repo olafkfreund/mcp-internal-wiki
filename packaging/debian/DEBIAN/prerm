@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+# Stop and disable service if removing
+if [ "$1" = "remove" ]; then
+    systemctl stop mcp-internal-wiki || true
+    systemctl disable mcp-internal-wiki || true
+fi
+
+# Remove user if purging
+if [ "$1" = "purge" ]; then
+    userdel mcp || true
+    rm -rf /etc/mcp-internal-wiki
+fi
+
+exit 0

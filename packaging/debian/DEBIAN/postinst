@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+# Create mcp user if it doesn't exist
+if ! id "mcp" &>/dev/null; then
+    useradd --system --no-create-home --shell /bin/false mcp
+fi
+
+# Create configuration directory
+mkdir -p /etc/mcp-internal-wiki
+chown mcp:mcp /etc/mcp-internal-wiki
+
+# Set permissions
+chmod 755 /usr/bin/mcp-wiki-server
+chmod 644 /usr/lib/systemd/system/mcp-internal-wiki.service
+
+# Reload systemd
+systemctl daemon-reload
+
+# Enable service (but don't start it automatically)
+systemctl enable mcp-internal-wiki
+
+exit 0
